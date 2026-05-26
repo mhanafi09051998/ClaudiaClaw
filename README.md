@@ -9,7 +9,6 @@
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![DeepSeek](https://img.shields.io/badge/DeepSeek-v4--Flash-4F46E5?style=flat-square)](https://deepseek.com)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](https://github.com/mhanafi09051998/ClaudiaClaw/pulls)
 [![Linux](https://img.shields.io/badge/Linux-ready-FCC624?style=flat-square&logo=linux)](https://kernel.org)
 
   <br/>
@@ -41,32 +40,38 @@ Built **from scratch in 2026** with modern JavaScript, zero legacy patterns, and
 
 ## 🚀 Install — Linux
 
-**Satu baris:**
+**Satu baris — langsung jadi:**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mhanafi09051998/ClaudiaClaw/main/install.sh | sh
 ```
 
-Script akan otomatis:
-1. Cek Git, Node.js v20+ (install otomatis jika belum ada)
-2. Clone repo ke `~/claudiaclaw/`
-3. Install dependencies + build
-4. Buat file `.env` dari contoh
-5. Tanya mau jalankan onboarding wizard
+Yang terjadi setelah itu:
+```
+1. Install Git & Node.js (otomatis jika perlu)
+2. Clone ClaudiaClaw ke ~/claudiaclaw/
+3. npm install + build
 
-**Selesai, tinggal:**
-```bash
-cd ~/claudiaclaw
-nano .env              # Isi DEEPSEEK_API_KEY & TELEGRAM_BOT_TOKEN
-npm start              # Agent jalan! 🎉
+┌─ Wizard Interaktif ──────────────────────────┐
+│                                              │
+│  Step 1: Masukkan DeepSeek API Key           │
+│  Step 2: Pilih model [deepseek-v4-flash]     │
+│  Step 3: Masukkan Telegram Bot Token         │
+│                                              │
+│  ✅ .env + config.json terisi otomatis       │
+│  ✅ PM2 auto-install, start, save            │
+│  ✅ Startup auto-configure                   │
+│                                              │
+│  🦞 AGENT SUDAH JALAN!                       │
+└──────────────────────────────────────────────┘
 ```
 
-**Atau pake PM2 (auto-restart):**
+**Tidak perlu edit file manual. Tidak perlu setup tambahan.**
+Cukup jawab 3 pertanyaan di terminal, agent langsung running via PM2.
+
+Cek status:
 ```bash
-cd ~/claudiaclaw
-npm install -g pm2
-pm2 start ecosystem.config.js
-pm2 save
-pm2 startup
+pm2 status
+pm2 logs claudiaclaw
 ```
 
 **Custom path:**
@@ -78,14 +83,12 @@ curl -fsSL https://raw.githubusercontent.com/.../install.sh | sh -s -- /opt/clau
 
 ## 🔒 Allowlist
 
-Batasi akses user/grup di `.env`:
+Batasi akses user/grup (edit `.env` jika perlu):
 ```bash
 ALLOWLIST_USERS=659617669,1714557404
 ALLOWLIST_GROUPS=-1003953147640
 ALLOWLIST_OWNERS=659617669
 ```
-
-Kosongkan untuk allow all.
 
 ---
 
@@ -118,11 +121,9 @@ Kosongkan untuk allow all.
 ### 📁 Struktur Data
 ```
 📁 data/
-  ├── users/<user-id>/
-  │   ├── memory.db, identity.md, soul.md, notes/, projects/
-  ├── groups/<group-id>/
-  │   ├── memory.db, notes/, projects/
-  └── claudiaclaw/identity.md, soul.md
+  ├── users/<user-id>/   → memory.db, identity.md, soul.md, notes/, projects/
+  ├── groups/<group-id>/ → memory.db, notes/, projects/
+  └── claudiaclaw/       → identity.md, soul.md
 ```
 
 ---
@@ -132,7 +133,7 @@ Kosongkan untuk allow all.
 | Package | Size | Description |
 |---------|:----:|-------------|
 | `@claudiaclaw/core` | ~3.3 KB | Engine, Identity, Isolation, Allowlist |
-| `@claudiaclaw/cli` | ~6.5 KB | CLI — `init`, `start`, `help` |
+| `@claudiaclaw/cli` | ~6.5 KB | CLI — init, start, help |
 | `@claudiaclaw/provider-deepseek` | ~5.1 KB | DeepSeek AI (chat + streaming + tools) |
 | `@claudiaclaw/platform-telegram` | ~2.8 KB | Telegram bot connector |
 | `@claudiaclaw/tools` | ~1.0 KB | Tool/function calling registry |
@@ -149,7 +150,7 @@ Kosongkan untuk allow all.
 - [x] SQLite, TurboQuant Memory, Skill System
 - [x] Identity/Soul files, User/group isolation
 - [x] Allowlist, PM2, Docker
-- [x] One-liner curl installer
+- [x] One-liner curl installer with interactive config
 
 ### 🚧 Coming Soon
 - [ ] Discord platform, OpenAI/Anthropic providers
