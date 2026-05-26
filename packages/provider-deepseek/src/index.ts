@@ -15,7 +15,7 @@ export class DeepSeekProvider implements ProviderAdapter {
   constructor(options: DeepSeekOptions) {
     this.apiKey = options.apiKey
     this.baseUrl = options.baseUrl ?? "https://api.deepseek.com"
-    this.defaultModel = options.defaultModel ?? "deepseek-chat"
+    this.defaultModel = options.defaultModel ?? "deepseek-v4-flash"
   }
 
   async complete(messages: Message[], options: CompletionOptions): Promise<CompletionResult> {

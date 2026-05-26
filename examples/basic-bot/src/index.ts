@@ -9,7 +9,7 @@ import { ConfigManager } from "@claudiaclaw/config"
 const config = new ConfigManager()
 config.defineSchema({
   "deepseek.apiKey": { type: "string", required: true, env: "DEEPSEEK_API_KEY" },
-  "deepseek.model": { type: "string", default: "deepseek-chat", env: "DEEPSEEK_MODEL" },
+  "deepseek.model": { type: "string", default: "deepseek-v4-flash", env: "DEEPSEEK_MODEL" },
   "telegram.botToken": { type: "string", required: true, env: "TELEGRAM_BOT_TOKEN" },
   "agent.systemPrompt": {
     type: "string",

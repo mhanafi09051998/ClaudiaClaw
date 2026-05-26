@@ -32,7 +32,7 @@ export async function start() {
   const config = new ConfigManager()
   config.defineSchema({
     "deepseek.apiKey": { type: "string", required: true, env: "DEEPSEEK_API_KEY" },
-    "deepseek.model": { type: "string", default: "deepseek-chat", env: "DEEPSEEK_MODEL" },
+    "deepseek.model": { type: "string", default: "deepseek-v4-flash", env: "DEEPSEEK_MODEL" },
     "telegram.botToken": { type: "string", required: true, env: "TELEGRAM_BOT_TOKEN" },
     "agent.systemPrompt": { type: "string", default: "You are a helpful assistant.", env: "SYSTEM_PROMPT" },
     "agent.maxHistory": { type: "number", default: 50, env: "MAX_HISTORY" },

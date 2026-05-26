@@ -1,7 +1,8 @@
 {
   "name": "claudiaclaw",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "license": "MIT",
   "description": "Super modern, efficient & effective agent framework — built from scratch with DeepSeek",
   "workspaces": [
     "packages/*"

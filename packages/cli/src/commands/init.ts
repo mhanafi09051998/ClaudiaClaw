@@ -106,7 +106,7 @@ export async function init() {
     return
   }
 
-  const model = await ask("Model name", "deepseek-chat")
+  const model = await ask("Model name", "deepseek-v4-flash")
 
   // ── Step 3: Platform ──//
   showStep(3, TOTAL_STEPS, "Platform Connector")
