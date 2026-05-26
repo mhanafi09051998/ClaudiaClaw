@@ -9,7 +9,7 @@ import initSqlJs, { Database as SqlJsDatabase } from "sql.js"
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs"
 import { join, resolve } from "path"
 import type { Message, Conversation } from "@claudiaclaw/core"
-import type { MemoryStore } from "./base.js"
+import type { MemoryStore } from "./store.js"
 
 export interface SQLiteStoreOptions {
   /** Path to SQLite database file (default: ./data/claudiaclaw/memory.db) */

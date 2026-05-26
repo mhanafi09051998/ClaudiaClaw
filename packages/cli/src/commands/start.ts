@@ -1,4 +1,7 @@
-import { AgentCore, IdentityManager } from "@claudiaclaw/core"
+import { existsSync, readFileSync } from "fs"
+import { join } from "path"
+import { AgentCore, IdentityManager, IsolationManager, Allowlist } from "@claudiaclaw/core"
+import type { IsolatedContext } from "@claudiaclaw/core"
 import { DeepSeekProvider } from "@claudiaclaw/provider-deepseek"
 import { TelegramPlatform } from "@claudiaclaw/platform-telegram"
 import { ToolRegistry } from "@claudiaclaw/tools"
@@ -8,10 +11,55 @@ import { TurboQuantEngine, AutoCompactManager, TurboQuantConversationManager } f
 import { ConfigManager } from "@claudiaclaw/config"
 import type { Message } from "@claudiaclaw/core"
 
+// ─── Per-user/group stores ───────────────────────────
+class IsolatedStores {
+  private stores = new Map<string, {
+    store: SQLiteStore
+    tq: TurboQuantEngine
+    ac: AutoCompactManager
+    cm: TurboQuantConversationManager
+    identity: IdentityManager
+  }>()
+
+  async resolve(
+    iso: IsolatedContext,
+    compactThreshold: number,
+    maxHistory: number,
+  ): Promise<IsolatedStores["stores"] extends Map<string, infer V> ? V : never> {
+    const key = `${iso.type}:${iso.id}`
+    if (this.stores.has(key)) return this.stores.get(key)!
+
+    // Per-user/group SQLite database
+    const store = new SQLiteStore({ dbPath: iso.memoryDbPath, saveInterval: 10000 })
+    await store.init()
+
+    const tq = new TurboQuantEngine({ compactThreshold, maxNuggetsPerConv: 100 }, store)
+    const ac = new AutoCompactManager(store, tq)
+    const cm = new TurboQuantConversationManager(store, tq, ac, maxHistory)
+
+    // Per-user identity (only for users)
+    const identity = new IdentityManager({ dataDir: iso.dir, identityFile: "identity.md", soulFile: "soul.md" })
+    identity.init()
+
+    const ctx = { store, tq, ac, cm, identity }
+    this.stores.set(key, ctx)
+
+    console.log(`[Isolation] Created store for ${iso.type} ${iso.id}`)
+    return ctx as any
+  }
+
+  async shutdownAll(): Promise<void> {
+    for (const [, ctx] of this.stores) {
+      ctx.store.close()
+    }
+    this.stores.clear()
+  }
+}
+
 // ─── User personality store ─────────────────────────
 interface UserPrefs {
-  persona: string     // system prompt for this user
-  onboarded: boolean  // has completed onboarding
+  persona: string
+  onboarded: boolean
 }
 
 class PersonaStore {
@@ -46,13 +94,11 @@ export async function start() {
       if (eqIdx === -1) continue
       const key = trimmed.slice(0, eqIdx).trim()
       const value = trimmed.slice(eqIdx + 1).trim()
-      if (key && value) {
-        process.env[key] = value
-      }
+      if (key && value) process.env[key] = value
     }
   }
 
-  // Init config
+  // Config
   const config = new ConfigManager()
   config.defineSchema({
     "deepseek.apiKey": { type: "string", required: true, env: "DEEPSEEK_API_KEY" },
@@ -62,87 +108,99 @@ export async function start() {
     "agent.compactThreshold": { type: "number", default: 40 },
     "agent.maxHistory": { type: "number", default: 50, env: "MAX_HISTORY" },
     "agent.name": { type: "string", default: "ClaudiaClaw Agent" },
+    // Allowlist
+    "allowlist.enabled": { type: "boolean", default: false },
+    "allowlist.users": { type: "string", default: "", env: "ALLOWLIST_USERS" },
+    "allowlist.groups": { type: "string", default: "", env: "ALLOWLIST_GROUPS" },
+    "allowlist.owners": { type: "string", default: "", env: "ALLOWLIST_OWNERS" },
   })
 
-  if (existsSync(configPath)) {
-    config.loadFile(configPath)
-  }
+  if (existsSync(configPath)) config.loadFile(configPath)
 
-  // Validate required
   const apiKey = config.get<string>("deepseek.apiKey")
-  if (!apiKey) {
-    console.error("❌ DEEPSEEK_API_KEY not set. Run 'claudiaclaw init' first or set .env")
-    process.exit(1)
-  }
+  if (!apiKey) { console.error("❌ DEEPSEEK_API_KEY not set"); process.exit(1) }
 
   const botToken = config.get<string>("telegram.botToken")
-  if (!botToken) {
-    console.error("❌ TELEGRAM_BOT_TOKEN not set. Run 'claudiaclaw init' first or set .env")
-    process.exit(1)
-  }
+  if (!botToken) { console.error("❌ TELEGRAM_BOT_TOKEN not set"); process.exit(1) }
 
-  // ─── Boot ──────────────────────────────────────────
+  // ─── Core Systems ────────────────────────────────────
   const agent = new AgentCore()
-  const store = new SQLiteStore()
-  await store.init()
-  const turboQuant = new TurboQuantEngine({
-    compactThreshold: config.get<number>("agent.compactThreshold") ?? 40,
-    maxNuggetsPerConv: 100,
-  }, store)
-  const autoCompact = new AutoCompactManager(store, turboQuant)
-  const conversations = new TurboQuantConversationManager(store, turboQuant, autoCompact, config.get<number>("agent.maxHistory")!)
   const tools = new ToolRegistry()
   const personas = new PersonaStore()
+  const isoStore = new IsolatedStores()
 
-  // ─── Identity & Soul ───────────────────────────────
-  const identity = new IdentityManager()
-  identity.init()
-  const systemIdentity = identity.getSystemPrompt()
+  // ─── Isolation & Allowlist ─────────────────────────
+  const isolation = new IsolationManager("./data")
+  const allowlist = new Allowlist({
+    users: (config.get<string>("allowlist.users") ?? "").split(",").filter(Boolean),
+    groups: (config.get<string>("allowlist.groups") ?? "").split(",").filter(Boolean),
+    owners: (config.get<string>("allowlist.owners") ?? "").split(",").filter(Boolean),
+    defaultAllow: !config.get<boolean>("allowlist.enabled"),
+  })
 
-  // ─── Skills (Modular) ─────────────────────────────
-  const skillManager = new SkillManager({ skillsDir: "./skills" })
-  
-  // Register built-in skills
-  skillManager.register(createBasicSkill())
-  
-  // Load all skills
-  await skillManager.loadAll(agent, tools)
-  
-  // Scan external skills directory
-  const extSkills = await skillManager.scanDirectory()
-  if (extSkills > 0) {
-    console.log(`[Skills] Loaded ${extSkills} external skill(s)`)
+  if (config.get<boolean>("allowlist.enabled")) {
+    console.log("[Allowlist] Enabled — restricted access")
+    console.log("[Allowlist] Status:", JSON.stringify(allowlist.status))
   }
 
-  const defaultPrompt = config.get<string>("agent.defaultPrompt")!
+  // ─── Global Identity ───────────────────────────────
+  const globalIdentity = new IdentityManager()
+  globalIdentity.init()
+  const globalSystemIdentity = globalIdentity.getSystemPrompt()
 
-  // Provider
+  // ─── Skills ─────────────────────────────────────────
+  const skillManager = new SkillManager({ skillsDir: "./skills" })
+  skillManager.register(createBasicSkill())
+  await skillManager.loadAll(agent, tools)
+  const extSkills = await skillManager.scanDirectory()
+  if (extSkills > 0) console.log(`[Skills] Loaded ${extSkills} external skill(s)`)
+
+  // ─── Provider ───────────────────────────────────────
   const provider = new DeepSeekProvider({
     apiKey,
     defaultModel: config.get<string>("deepseek.model"),
   })
   agent.registerProvider(provider)
 
+  const compactThreshold = config.get<number>("agent.compactThreshold") ?? 40
+  const maxHistory = config.get<number>("agent.maxHistory") ?? 50
+  const defaultPrompt = config.get<string>("agent.defaultPrompt")!
+
   // ─── Message handler ───────────────────────────────
   async function handleMessage(msg: Message) {
     const chatId = String(msg.metadata?.chatId ?? "")
     const userId = String(msg.metadata?.userId ?? chatId)
+    const chatType = String(msg.metadata?.chatType ?? "private")
     if (!msg.content) return
 
     const platform = agent.getPlatform("telegram")
-    const convId = `telegram:${chatId}`
 
-    // Load persistent nuggets for this conversation
-    turboQuant.loadNuggetsFromStore(convId)
+    // ── Allowlist check ──//
+    if (!allowlist.isAllowed(chatType, chatId, userId)) {
+      console.log(`[Allowlist] Blocked: user=${userId} chat=${chatId}`)
+      if (platform) {
+        await platform.sendMessage(chatId, "Maaf, akses Anda belum diizinkan. Hubungi admin untuk allowlist.")
+      }
+      return
+    }
+
+    // ── Resolve isolated store ──//
+    const iso = isolation.resolve(chatType, chatId, userId)
+    const ctx = await isoStore.resolve(iso, compactThreshold, maxHistory)
+    const convId = `${chatType}:${chatId}`
+
+    // Load persistent nuggets
+    ctx.tq.loadNuggetsFromStore(convId)
+
+    // Per-user/group identity
+    const systemIdentity = [globalSystemIdentity, ctx.identity.getSystemPrompt()]
+      .filter(Boolean).join("\n\n")
 
     // ── Onboarding flow ──//
     if (!personas.isOnboarded(userId)) {
       const firstMsg = msg.content.toLowerCase().trim()
 
-      // Check if user is responding to the personality question
       if (personas.get(userId)?.onboarded === false && firstMsg) {
-        // User has replied with their desired personality
-        // We'll use this as context but also let the AI handle the conversation
         const prompt = `Kamu adalah asisten AI yang baru saja ditanyai tentang kepribadian yang diinginkan user. 
 User ingin kamu menjadi seperti ini: "${firstMsg}".
 
@@ -150,21 +208,15 @@ Gunakan deskripsi ini sebagai pedoman kepribadianmu. Jawab dengan ramah, perkena
 dan tanyakan apa yang bisa kamu bantu. Jadilah versi dirimu sesuai keinginan user! 🦞`
 
         personas.set(userId, { persona: firstMsg, onboarded: true })
-
-        await conversations.getOrCreate(convId, "telegram", chatId)
-        await conversations.addMessage(convId, msg)
-
-        const ctx = await conversations.buildContext(convId, prompt)
-        const result = await provider.complete(ctx)
-        await conversations.addMessage(convId, result.message)
-
-        if (platform && result.message.content) {
-          await platform.sendMessage(chatId, result.message.content)
-        }
+        await ctx.cm.getOrCreate(convId, chatType, chatId)
+        await ctx.cm.addMessage(convId, msg)
+        const ctxMsgs = await ctx.cm.buildContext(convId, prompt)
+        const result = await provider.complete(ctxMsgs)
+        await ctx.cm.addMessage(convId, result.message)
+        if (platform && result.message.content) await platform.sendMessage(chatId, result.message.content)
         return
       }
 
-      // First interaction — ask about personality
       const greeting =
         `Halo! Aku ClaudiaClaw 🦞 — asisten AI ciptaan kamu.\n\n` +
         `Aku bisa jadi apapun yang kamu mau. Ceritakan, kamu ingin aku jadi asisten seperti apa?\n\n` +
@@ -174,15 +226,10 @@ dan tanyakan apa yang bisa kamu bantu. Jadilah versi dirimu sesuai keinginan use
         `• "Kamu adalah mentor coding yang sabar dan detail"\n` +
         `• Bebas! Ceritakan gaya yang kamu inginkan 😊`
 
-      // Mark as onboarding in progress
       personas.set(userId, { persona: "", onboarded: false })
-
-      await conversations.getOrCreate(convId, "telegram", chatId)
-      await conversations.addMessage(convId, msg)
-
-      if (platform) {
-        await platform.sendMessage(chatId, greeting)
-      }
+      await ctx.cm.getOrCreate(convId, chatType, chatId)
+      await ctx.cm.addMessage(convId, msg)
+      if (platform) await platform.sendMessage(chatId, greeting)
       return
     }
 
@@ -191,40 +238,30 @@ dan tanyakan apa yang bisa kamu bantu. Jadilah versi dirimu sesuai keinginan use
     const skillContext = skillManager.getCombinedSystemPrompt()
     const fullPrompt = [systemIdentity, skillContext, userPrompt].filter(Boolean).join("\n\n")
 
-    await conversations.getOrCreate(convId, "telegram", chatId)
-    await conversations.addMessage(convId, msg)
+    await ctx.cm.getOrCreate(convId, chatType, chatId)
+    await ctx.cm.addMessage(convId, msg)
 
-    const context = await conversations.buildContext(convId, fullPrompt)
+    const context = await ctx.cm.buildContext(convId, fullPrompt)
     const result = await provider.complete(context, { tools: tools.getAllDefinitions() })
-    await conversations.addMessage(convId, result.message)
+    await ctx.cm.addMessage(convId, result.message)
 
-    // Handle tool calls
     if (result.message.toolCalls?.length) {
       for (const tc of result.message.toolCalls) {
         const toolResult = await agent.executeToolCall(tc, (name, args) =>
           tools.execute({ id: tc.id, type: "function", function: { name, arguments: JSON.stringify(args) } }),
         )
-        await conversations.addMessage(convId, {
-          id: crypto.randomUUID(),
-          role: "tool",
-          content: toolResult.content,
-          name: toolResult.name,
-          toolCallId: toolResult.toolCallId,
-          timestamp: Date.now(),
+        await ctx.cm.addMessage(convId, {
+          id: crypto.randomUUID(), role: "tool", content: toolResult.content,
+          name: toolResult.name, toolCallId: toolResult.toolCallId, timestamp: Date.now(),
         })
       }
 
-      const updatedContext = await conversations.buildContext(convId, fullPrompt)
+      const updatedContext = await ctx.cm.buildContext(convId, fullPrompt)
       const finalResult = await provider.complete(updatedContext)
-      await conversations.addMessage(convId, finalResult.message)
-
-      if (platform && finalResult.message.content) {
-        await platform.sendMessage(chatId, finalResult.message.content)
-      }
+      await ctx.cm.addMessage(convId, finalResult.message)
+      if (platform && finalResult.message.content) await platform.sendMessage(chatId, finalResult.message.content)
     } else if (result.message.content) {
-      if (platform) {
-        await platform.sendMessage(chatId, result.message.content)
-      }
+      if (platform) await platform.sendMessage(chatId, result.message.content)
     }
   }
 
@@ -237,11 +274,9 @@ dan tanyakan apa yang bisa kamu bantu. Jadilah versi dirimu sesuai keinginan use
   agent.on("agent:start", () => console.log(`\n🦞 ${agentName} is running! Press Ctrl+C to stop.\n`))
   agent.on("error", (err) => console.error("💥 Error:", err))
 
-  // Graceful shutdown
-  // Flush persistent store on shutdown
   async function shutdown() {
     await agent.stop()
-    store.close()
+    await isoStore.shutdownAll()
     process.exit(0)
   }
   process.on("SIGINT", shutdown)

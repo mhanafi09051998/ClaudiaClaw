@@ -1,6 +1,6 @@
-// ─── Base Types & Stores ─────────────────────────────
-export type { MemoryStore } from "./base.js"
-export { InMemoryStore, ConversationManager } from "./base.js"
+// ─── Store Interface & Base ──────────────────────────
+export type { MemoryStore } from "./store.js"
+export { ConversationManager } from "./store.js"
 
 // ─── TurboQuant Memory Engine ───────────────────────
 export type {
@@ -14,10 +14,6 @@ export {
   AutoCompactManager,
   TurboQuantConversationManager,
 } from "./turboquant.js"
-
-// ─── File Store ──────────────────────────────────────
-export { FileStore } from "./filestore.js"
-export type { FileStoreOptions } from "./filestore.js"
 
 // ─── SQLite Store ────────────────────────────────────
 export { SQLiteStore } from "./sqlitestore.js"

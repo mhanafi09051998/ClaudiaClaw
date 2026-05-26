@@ -10,6 +10,10 @@ export interface AgentIdentity {
 export interface IdentityOptions {
   /** Directory to store identity/soul files (default: ./data/claudiaclaw/) */
   dataDir?: string
+  /** Identity filename (default: identity.md) */
+  identityFile?: string
+  /** Soul filename (default: soul.md) */
+  soulFile?: string
 }
 
 const DEFAULT_IDENTITY = `# IDENTITY — Who Am I?
@@ -30,6 +34,8 @@ const DEFAULT_SOUL = `# SOUL — Core Personality
 
 export class IdentityManager {
   private dataDir: string
+  private identityFile: string
+  private soulFile: string
   private _identity: AgentIdentity = {
     name: "Claudia",
     persona: "",
@@ -38,6 +44,8 @@ export class IdentityManager {
 
   constructor(options?: IdentityOptions) {
     this.dataDir = resolve(options?.dataDir ?? "./data/claudiaclaw")
+    this.identityFile = options?.identityFile ?? "identity.md"
+    this.soulFile = options?.soulFile ?? "soul.md"
   }
 
   /** Initialize identity directory and files */
@@ -47,8 +55,8 @@ export class IdentityManager {
     }
 
     // Create default files if they don't exist
-    const identityPath = join(this.dataDir, "identity.md")
-    const soulPath = join(this.dataDir, "soul.md")
+    const identityPath = join(this.dataDir, this.identityFile)
+    const soulPath = join(this.dataDir, this.soulFile)
 
     if (!existsSync(identityPath)) {
       writeFileSync(identityPath, DEFAULT_IDENTITY, "utf-8")
@@ -62,8 +70,8 @@ export class IdentityManager {
 
   /** Load identity and soul from files */
   load(): void {
-    const identityPath = join(this.dataDir, "identity.md")
-    const soulPath = join(this.dataDir, "soul.md")
+    const identityPath = join(this.dataDir, this.identityFile)
+    const soulPath = join(this.dataDir, this.soulFile)
 
     if (existsSync(identityPath)) {
       this._identity.identity = readFileSync(identityPath, "utf-8")
@@ -103,15 +111,15 @@ export class IdentityManager {
   /** Update soul.md content */
   updateSoul(content: string): void {
     this._identity.persona = content
-    writeFileSync(join(this.dataDir, "soul.md"), content, "utf-8")
+    writeFileSync(join(this.dataDir, this.soulFile), content, "utf-8")
   }
 
   /** File paths */
   get identityPath(): string {
-    return join(this.dataDir, "identity.md")
+    return join(this.dataDir, this.identityFile)
   }
 
   get soulPath(): string {
-    return join(this.dataDir, "soul.md")
+    return join(this.dataDir, this.soulFile)
   }
 }
