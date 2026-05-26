@@ -111,45 +111,41 @@ TELEGRAM_BOT_TOKEN=${botToken}
   console.log("  ✅ .env berisi API key & token")
   console.log("  ✅ config.json siap")
 
-  // ── PM2 Setup ──//
+  // ── Auto PM2 Setup ──//
   console.log("")
-  const setupPm2 = await confirm("🔧 Setup PM2 auto-restart?")
-  if (setupPm2) {
-    try {
-      execSync("npm install -g pm2", { stdio: "ignore" })
-      execSync("pm2 start ecosystem.config.js", { cwd, stdio: "ignore" })
-      execSync("pm2 save", { stdio: "ignore" })
-      console.log("  ✅ PM2 started — agent jalan dengan auto-restart")
+  console.log("🔧 Setup PM2 auto-restart...")
+  try {
+    execSync("npm install -g pm2", { stdio: "ignore" })
+    execSync("pm2 start ecosystem.config.js", { cwd, stdio: "ignore" })
+    execSync("pm2 save", { stdio: "ignore" })
+    console.log("  ✅ PM2 started — agent jalan dengan auto-restart")
 
-      const setupStartup = await confirm("🐧 Setup startup otomatis pas reboot?")
-      if (setupStartup) {
-        const startupCmd = execSync("pm2 startup", { cwd, encoding: "utf-8" })
-        // Print the sudo command user needs to run
-        const lines = startupCmd.split("\n")
-        for (const line of lines) {
-          if (line.includes("sudo")) {
-            console.log(`  ⚡ Jalankan: ${line.trim()}`)
-          }
+    // Auto startup
+    try {
+      const startupCmd = execSync("pm2 startup", { cwd, encoding: "utf-8" })
+      const lines = startupCmd.split("\n")
+      for (const line of lines) {
+        if (line.includes("sudo")) {
+          console.log(`  ⚡ Jalankan: ${line.trim()}`)
         }
-        console.log("  ✅ Startup configured")
       }
-    } catch (err) {
-      console.log("  ⚠️  Gagal setup PM2:", (err as Error).message)
-    }
+      console.log("  ✅ Startup configured")
+    } catch {}
+  } catch (err) {
+    console.log("  ⚠️  Gagal setup PM2:", (err as Error).message)
+    console.log("  Jalankan manual: npm start")
   }
 
   // ── Done ──//
   console.log(`
 ╔══════════════════════════════════════════╗
-║          ✅ Siap!                        ║
+║          ✅ Siap! 🦞                       ║
 ╚══════════════════════════════════════════╝
 
 📁 Config: .env dan config.json sudah diisi.
 
-🚀  Jalankan agent:
-     npm start
-
-📋  Atau lihat log PM2:
+🚀  Agent sudah jalan via PM2!
+     pm2 status
      pm2 logs claudiaclaw
 
 🦞  Butuh bantuan?
