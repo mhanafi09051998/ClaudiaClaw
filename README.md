@@ -48,7 +48,7 @@ curl -fsSL https://raw.githubusercontent.com/mhanafi09051998/ClaudiaClaw/main/in
 Yang terjadi setelah itu:
 ```
 1. Install Git & Node.js (otomatis jika perlu)
-2. Clone ClaudiaClaw ke ~/claudiaclaw/
+2. Clone ClaudiaClaw ke ~/.claudiaclaw/
 3. npm install + build
 
 ┌─ Wizard Interaktif ──────────────────────────┐

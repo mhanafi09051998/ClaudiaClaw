@@ -64,7 +64,7 @@ echo -e "  ${GREEN}✓${NC} npm $(npm --version)"
 
 # ─── Install directory ─────────────────────────────
 
-INSTALL_DIR="${1:-$HOME/claudiaclaw}"
+INSTALL_DIR="${1:-$HOME/.claudiaclaw}"
 [ "$1" = "--help" ] || [ "$1" = "-h" ] && {
   echo "Usage: curl ... | sh"; echo "       curl ... | sh -s -- /custom/path"; exit 0
 }
