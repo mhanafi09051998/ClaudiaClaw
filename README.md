@@ -85,13 +85,31 @@ curl -fsSL https://raw.githubusercontent.com/.../install.sh | sh -s -- /opt/clau
 
 ---
 
-## 🔒 Allowlist
+## 🔒 Pairing & Allowlist
 
-Batasi akses user/grup (edit `.env` jika perlu):
+User yang belum terdaftar otomatis dapat pairing code saat kirim pesan:
+```
+⛔ Access not configured.
+Your Telegram user ID: 659617669
+Your pairing code: 55GAGP8E
+
+Ask the bot owner to approve with:
+claudiaclaw pairing approve telegram 55GAGP8E
+```
+
+**Owner approve dari server:**
 ```bash
-ALLOWLIST_USERS=659617669,1714557404
-ALLOWLIST_GROUPS=-1003953147640
-ALLOWLIST_OWNERS=659617669
+claudiaclaw pairing approve telegram 55GAGP8E
+✅ User 659617669 approved!
+```
+
+Atau tambah manual di `data/claudiaclaw/allowlist.json`:
+```json
+{
+  "users": ["659617669"],
+  "groups": ["-1003953147640"],
+  "owners": ["659617669"]
+}
 ```
 
 ---
