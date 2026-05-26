@@ -1,0 +1,27 @@
+{
+  "name": "claudiaclaw",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Super modern, efficient & effective agent framework — built from scratch with DeepSeek",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "clean": "npm run clean --workspaces",
+    "dev": "npm run dev --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint packages/*/src --ext .ts",
+    "format": "prettier --write 'packages/*/src/**/*.ts'"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.4.0",
+    "tsup": "^8.3.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

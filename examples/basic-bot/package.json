@@ -1,0 +1,21 @@
+{
+  "name": "example-basic-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@claudiaclaw/core": "*",
+    "@claudiaclaw/provider-deepseek": "*",
+    "@claudiaclaw/platform-telegram": "*",
+    "@claudiaclaw/tools": "*",
+    "@claudiaclaw/memory": "*",
+    "@claudiaclaw/config": "*"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5.7.0"
+  }
+}
