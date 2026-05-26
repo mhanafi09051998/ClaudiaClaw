@@ -10,6 +10,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![DeepSeek](https://img.shields.io/badge/DeepSeek-v4--Flash-4F46E5?style=flat-square)](https://deepseek.com)
 [![Linux](https://img.shields.io/badge/Linux-ready-FCC624?style=flat-square&logo=linux)](https://kernel.org)
+[![Windows](https://img.shields.io/badge/Windows-ready-00A4EF?style=flat-square&logo=windows)](https://git-scm.com/download/win)
 
   <br/>
 </div>
@@ -38,9 +39,9 @@ Built **from scratch in 2026** with modern JavaScript, zero legacy patterns, and
 
 ---
 
-## 🚀 Install — Linux
+## 🚀 Install
 
-**Satu baris — langsung jadi:**
+**Satu baris — Linux / Windows (Git Bash):**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mhanafi09051998/ClaudiaClaw/main/install.sh | sh
 ```
@@ -73,6 +74,9 @@ Cek status:
 pm2 status
 pm2 logs claudiaclaw
 ```
+
+**Windows:** pastikan sudah install [Git for Windows](https://git-scm.com/download/win) dan [Node.js v22+](https://nodejs.org).
+Jalankan dari **Git Bash** (bukan CMD/PowerShell).
 
 **Custom path:**
 ```bash
