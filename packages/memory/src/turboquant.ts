@@ -12,7 +12,9 @@
  */
 
 import type { Message, Conversation } from "@claudiaclaw/core"
-import { InMemoryStore, ConversationManager } from "./index.js"
+import { InMemoryStore, ConversationManager } from "./base.js"
+import type { FileStore } from "./filestore.js"
+import type { MemoryStore } from "./base.js"
 
 // ─── Types ──────────────────────────────────────────
 
@@ -246,9 +248,11 @@ function extractKeywords(text: string): string[] {
 export class TurboQuantEngine {
   private nuggets: Map<string, MemoryNugget> = new Map()
   private config: TurboQuantConfig
+  private fileStore?: FileStore
 
-  constructor(config?: Partial<TurboQuantConfig>) {
+  constructor(config?: Partial<TurboQuantConfig>, fileStore?: FileStore) {
     this.config = { ...DEFAULT_CONFIG, ...config }
+    this.fileStore = fileStore
   }
 
   /** Update config */
@@ -281,10 +285,14 @@ export class TurboQuantEngine {
       similar.lastReferenced = Date.now()
       similar.content = nugget.content // Use newer content
       similar.keywords = [...new Set([...similar.keywords, ...nugget.keywords])]
+      this.persistConversationNuggets(similar.sourceConvId)
       return
     }
 
     this.nuggets.set(nugget.id, nugget)
+
+    // Persist to file store
+    this.persistConversationNuggets(nugget.sourceConvId)
 
     // Prune if over max
     if (this.nuggets.size > this.config.maxNuggetsPerConv) {
@@ -404,6 +412,45 @@ export class TurboQuantEngine {
     return undefined
   }
 
+  /** Persist nuggets for a conversation to file store */
+  private persistConversationNuggets(convId: string): void {
+    if (!this.fileStore) return
+    const nuggets = this.getConversationNuggets(convId).map((n) => ({
+      id: n.id,
+      type: n.type,
+      content: n.content,
+      keywords: n.keywords,
+      importance: n.importance,
+      createdAt: n.createdAt,
+      lastReferenced: n.lastReferenced,
+      sourceConvId: n.sourceConvId,
+      sourceMessageId: n.sourceMessageId,
+    }))
+    this.fileStore.saveNuggets(convId, nuggets)
+  }
+
+  /** Load nuggets from file store */
+  loadNuggetsFromStore(convId: string): void {
+    if (!this.fileStore) return
+    const stored = this.fileStore.loadNuggets(convId)
+    if (!stored || stored.length === 0) return
+
+    for (const n of stored) {
+      const nugget: MemoryNugget = {
+        id: n.id,
+        type: n.type as NuggetType,
+        content: n.content,
+        keywords: n.keywords,
+        importance: n.importance,
+        createdAt: n.createdAt,
+        lastReferenced: n.lastReferenced,
+        sourceConvId: n.sourceConvId,
+        sourceMessageId: n.sourceMessageId,
+      }
+      this.nuggets.set(nugget.id, nugget)
+    }
+  }
+
   private getNuggetIcon(type: NuggetType): string {
     const icons: Record<NuggetType, string> = {
       fact: "📌",
@@ -430,11 +477,11 @@ export class TurboQuantEngine {
 
 export class AutoCompactManager {
   private engine: TurboQuantEngine
-  private store: InMemoryStore
+  private store: InMemoryStore | FileStore
   private config: TurboQuantConfig
 
   constructor(
-    store: InMemoryStore,
+    store: InMemoryStore | FileStore,
     engine: TurboQuantEngine,
     config?: Partial<TurboQuantConfig>,
   ) {
@@ -524,7 +571,7 @@ export class TurboQuantConversationManager extends ConversationManager {
   private compactThreshold: number
 
   constructor(
-    store: InMemoryStore,
+    store: InMemoryStore | FileStore,
     turboEngine: TurboQuantEngine,
     autoCompact: AutoCompactManager,
     defaultHistoryLimit = 100,

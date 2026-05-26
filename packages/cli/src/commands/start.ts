@@ -4,7 +4,7 @@ import { AgentCore } from "@claudiaclaw/core"
 import { DeepSeekProvider } from "@claudiaclaw/provider-deepseek"
 import { TelegramPlatform } from "@claudiaclaw/platform-telegram"
 import { ToolRegistry } from "@claudiaclaw/tools"
-import { InMemoryStore } from "@claudiaclaw/memory"
+import { FileStore } from "@claudiaclaw/memory"
 import { TurboQuantEngine, AutoCompactManager, TurboQuantConversationManager } from "@claudiaclaw/memory"
 import { ConfigManager } from "@claudiaclaw/config"
 import type { Message } from "@claudiaclaw/core"
@@ -84,11 +84,11 @@ export async function start() {
 
   // ─── Boot ──────────────────────────────────────────
   const agent = new AgentCore()
-  const store = new InMemoryStore()
+  const store = new FileStore()
   const turboQuant = new TurboQuantEngine({
     compactThreshold: config.get<number>("agent.compactThreshold") ?? 40,
     maxNuggetsPerConv: 100,
-  })
+  }, store)
   const autoCompact = new AutoCompactManager(store, turboQuant)
   const conversations = new TurboQuantConversationManager(store, turboQuant, autoCompact, config.get<number>("agent.maxHistory")!)
   const tools = new ToolRegistry()
@@ -129,6 +129,9 @@ export async function start() {
 
     const platform = agent.getPlatform("telegram")
     const convId = `telegram:${chatId}`
+
+    // Load persistent nuggets for this conversation
+    turboQuant.loadNuggetsFromStore(convId)
 
     // ── Onboarding flow ──//
     if (!personas.isOnboarded(userId)) {
@@ -231,8 +234,14 @@ dan tanyakan apa yang bisa kamu bantu. Jadilah versi dirimu sesuai keinginan use
   agent.on("error", (err) => console.error("💥 Error:", err))
 
   // Graceful shutdown
-  process.on("SIGINT", async () => { await agent.stop(); process.exit(0) })
-  process.on("SIGTERM", async () => { await agent.stop(); process.exit(0) })
+  // Flush persistent store on shutdown
+  async function shutdown() {
+    await agent.stop()
+    store.flush()
+    process.exit(0)
+  }
+  process.on("SIGINT", shutdown)
+  process.on("SIGTERM", shutdown)
 
   await agent.start()
 }
