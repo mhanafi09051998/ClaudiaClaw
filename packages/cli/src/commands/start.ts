@@ -104,8 +104,6 @@ export async function start() {
     "deepseek.apiKey": { type: "string", required: true, env: "DEEPSEEK_API_KEY" },
     "deepseek.model": { type: "string", default: "deepseek-v4-flash", env: "DEEPSEEK_MODEL" },
     "telegram.botToken": { type: "string", required: true, env: "TELEGRAM_BOT_TOKEN" },
-    "telegram.webhookUrl": { type: "string", default: "", env: "TELEGRAM_WEBHOOK_URL" },
-    "telegram.webhookPort": { type: "number", default: 8443, env: "TELEGRAM_WEBHOOK_PORT" },
     "agent.defaultPrompt": { type: "string", default: "Kamu adalah asisten AI yang helpful, ramah, dan cekatan." },
     "agent.compactThreshold": { type: "number", default: 40 },
     "agent.maxHistory": { type: "number", default: 50, env: "MAX_HISTORY" },
@@ -268,12 +266,7 @@ dan tanyakan apa yang bisa kamu bantu. Jadilah versi dirimu sesuai keinginan use
   }
 
   // ─── Platform ───────────────────────────────────────
-  const telegram = new TelegramPlatform({
-    botToken,
-    onMessage: handleMessage,
-    webhookUrl: config.get<string>("telegram.webhookUrl") || undefined,
-    webhookPort: config.get<number>("telegram.webhookPort") ?? 8443,
-  })
+  const telegram = new TelegramPlatform({ botToken, onMessage: handleMessage })
   agent.registerPlatform(telegram)
 
   // ─── Events ─────────────────────────────────────────
