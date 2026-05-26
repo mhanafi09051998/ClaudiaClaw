@@ -11,6 +11,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![DeepSeek](https://img.shields.io/badge/DeepSeek-v4--Flash-4F46E5?style=flat-square)](https://deepseek.com)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker)](https://docker.com)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](https://github.com/mhanafi09051998/ClaudiaClaw/pulls)
 
   <br/>
@@ -22,92 +23,177 @@
 
 **ClaudiaClaw isn't just another agent framework — it's a complete reimagining.**
 
-Most agent frameworks (OpenClaw, LangChain, etc.) were built years ago with architectural baggage. ClaudiaClaw is built **from scratch in 2026** with modern JavaScript, zero legacy patterns, and one obsession: **maximum efficiency for real agent workloads**.
+Most agent frameworks were built years ago with architectural baggage. ClaudiaClaw is built **from scratch in 2026** with modern JavaScript, zero legacy patterns, and one obsession: **maximum efficiency for real agent workloads**.
 
 | Feature | ClaudiaClaw 🦞 | OpenClaw |
 |---------|:-------------:|:--------:|
 | **Stack** | Pure ESM + TypeScript 5.7 | Mixed CJS/ESM |
 | **AI Provider** | DeepSeek-first, pluggable | Multi-provider (heavier) |
-| **Bundle Size** | ~25KB per package | ~500KB+ core |
+| **Bundle Size** | ~15KB total packages | ~500KB+ core |
 | **Startup Time** | ~80ms cold start | ~500ms+ |
 | **Middleware** | Lightweight pipeline | Heavy middleware chain |
-| **Tool System** | First-class registry | Plugin-based |
-| **Memory** | Built-in ConversationManager | External only |
-| **Config** | JSON + ENV with schema validation | YAML-heavy |
+| **Memory** | SQLite + TurboQuant™ persistent | External only |
+| **User Isolation** | ✅ Auto per-user/grup directory | ❌ |
+| **Allowlist** | ✅ By ID (user & grup) | ✅ |
+| **Skill System** | ✅ Modular, loadable at runtime | Plugin-based |
+| **Identity/Soul** | ✅ identity.md + soul.md files | ❌ |
+| **Docker** | ✅ Multi-stage, production-ready | Manual |
 | **CLI Onboarding** | Interactive wizard (`init`) | Manual setup |
 | **Learning Curve** | Low — 5 minutes to first agent | Medium |
 | **Architecture** | Micro-packages, zero coupling | Monolithic |
-| **Modularity** | ⭐ Fully decoupled | Bundled monolith |
-| **Developer Experience** | ⭐ Exceptional | Good |
-| **Performance** | ⭐ Optimized for throughput | Legacy overhead |
 
-> 💡 **The bottom line:** ClaudiaClaw is 10x lighter, 5x faster to start, and infinitely more pleasant to develop with — while doing everything OpenClaw does and more.
+> 💡 **ClaudiaClaw is lighter, faster, and more feature-rich — while being simpler to use.**
 
 ---
 
-## ✨ Key Advantages
+## 🚀 Quick Start — 4 Ways
 
-### ⚡ Blazing Fast
-- **~80ms cold start** — deploy on serverless functions without penalty
-- **Zero dependency bloat** — every package is lean by design
-- **Tree-shakeable** — only import what you need
-
-### 🧩 True Modularity
-```
-packages/
-├── core/                 # 3.3 KB — just the engine
-├── provider-deepseek/    # 5.1 KB — AI provider
-├── platform-telegram/    # 2.8 KB — Telegram adapter
-├── tools/                # 1.0 KB — function calling
-├── memory/               # 2.5 KB — conversation storage
-└── config/               # 1.2 KB — configuration
-```
-Each package is **independently usable**, **independently testable**, and **independently deployable**.
-
-### 🚀 First-Class Developer Experience
+### 1. Docker (paling gampang) ⭐
 ```bash
-npx claudiaclaw init      # Interactive onboarding wizard
-npx claudiaclaw start     # One command to run
+docker run -e DEEPSEEK_API_KEY=*** \
+           -e TELEGRAM_BOT_TOKEN=*** \
+           -p 8443:8443 \
+           ghcr.io/mhanafi09051998/claudiaclaw
 ```
 
-The wizard guides you through:
-1. Project name & setup
-2. AI provider & API key
-3. Platform integration (Telegram, etc.)
-4. Agent personality
-5. Generates everything — `.env`, `config.json`, `package.json`
+### 2. Docker Compose (production)
+```bash
+git clone https://github.com/mhanafi09051998/ClaudiaClaw.git
+cd ClaudiaClaw
+cp .env.example .env    # Isi API key
+docker compose up -d    # 🚀 Jalan!
+```
 
-### 🧠 DeepSeek-Optimized
-- **Default model:** `deepseek-v4-flash` — the fastest DeepSeek model
-- Streaming support built-in
-- Function calling ready
-- Cost-optimized token management
-
----
-
-## 🚀 Quick Start
-
-### One-liner (recommended)
+### 3. CLI Onboarding (local)
 ```bash
 npx claudiaclaw init
 ```
-Follow the interactive prompts. Done.
 
-### Manual setup
+### 4. Manual setup
 ```bash
 git clone https://github.com/mhanafi09051998/ClaudiaClaw.git
 cd ClaudiaClaw
 npm install
 npm run build
-cp .env.example .env   # Edit with your keys
-npm start               # 🎉 Agent is running!
+cp .env.example .env   # Isi API key
+npm start
 ```
 
-### From scratch
+---
+
+## 📖 Panduan Lengkap
+
+### 🔑 Persiapan
+
+Sebelum mulai, siapkan:
+1. **DeepSeek API Key** — daftar di [platform.deepseek.com](https://platform.deepseek.com)
+2. **Telegram Bot Token** — buat bot baru via [@BotFather](https://t.me/BotFather)
+3. **Domain + HTTPS** (hanya untuk webhook mode) — bisa pakai [ngrok](https://ngrok.com) untuk testing
+
+### 🐳 Docker (Recommended untuk Production)
+
 ```bash
-mkdir my-agent && cd my-agent
-npm init -y
-npm install @claudiaclaw/core @claudiaclaw/provider-deepseek @claudiaclaw/platform-telegram
+# 1. Build image
+docker build -t claudiaclaw .
+
+# 2. Run dengan environment variables
+docker run -d \
+  --name claudiaclaw \
+  -e DEEPSEEK_API_KEY=sk-xxx \
+  -e TELEGRAM_BOT_TOKEN=xxx:xxx \
+  -e TELEGRAM_WEBHOOK_URL=https://domain-anda.com \
+  -p 8443:8443 \
+  -v claudiaclaw_data:/app/data \
+  --restart unless-stopped \
+  claudiaclaw
+```
+
+### 📦 Docker Compose (Recommended untuk VPS)
+
+```bash
+# 1. Clone
+git clone https://github.com/mhanafi09051998/ClaudiaClaw.git
+cd ClaudiaClaw
+
+# 2. Setup .env
+cp .env.example .env
+nano .env   # Isi API key & token
+
+# 3. Jalanin
+docker compose up -d
+
+# 4. Cek log
+docker compose logs -f
+
+# 5. Stop
+docker compose down
+```
+
+Struktur docker-compose:
+```
+claudiaclaw/
+├── .env              # API key, token, dll
+├── skills/           # 🔌 External skills (optional)
+└── data/             # 💾 Persistent data (SQLite + identity)
+```
+
+### 📡 Webhook vs Polling
+
+ClaudiaClaw mendukung **dua mode** koneksi ke Telegram:
+
+| Mode | Cocok untuk | Setup |
+|------|------------|-------|
+| **Polling** ✅ (default) | Development, lokal | `TELEGRAM_WEBHOOK_URL=` (kosongkan) |
+| **Webhook** 🚀 | Production, VPS | `TELEGRAM_WEBHOOK_URL=https://domain.com` |
+
+**Webhook mode** — Telegram langsung kirim pesan ke server ClaudiaClaw. Lebih cepat dan efisien. Set di `.env`:
+```bash
+TELEGRAM_WEBHOOK_URL=https://claudia.anda.com
+TELEGRAM_WEBHOOK_PORT=8443
+```
+> ℹ️ Telegram mewajibkan port: **443, 80, 88, 8443** dengan HTTPS valid.
+
+Testing webhook lokal pakai ngrok:
+```bash
+ngrok http 8443
+# Copy URL https://xxxx.ngrok.io → paste ke TELEGRAM_WEBHOOK_URL
+```
+
+### 🔒 Allowlist
+
+Batasi akses hanya untuk user/grup tertentu:
+
+```bash
+# Di .env
+ALLOWLIST_USERS=659617669,1714557404
+ALLOWLIST_GROUPS=-1003953147640
+ALLOWLIST_OWNERS=659617669
+```
+
+Atau di `config.json`:
+```json
+{
+  "allowlist": {
+    "enabled": true,
+    "users": ["659617669"],
+    "groups": ["-1003953147640"],
+    "owners": ["659617669"]
+  }
+}
+```
+
+User/grup yang tidak terdaftar otomatis ditolak.
+
+### ♻️ PM2 Auto-restart
+
+```bash
+# Install PM2 global
+npm install -g pm2
+
+# Start dengan auto-restart
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup   # Auto-start pas reboot
 ```
 
 ---
@@ -116,32 +202,61 @@ npm install @claudiaclaw/core @claudiaclaw/provider-deepseek @claudiaclaw/platfo
 
 ```
                     ┌─────────────┐
-                    │  Platforms  │  ← Telegram · Discord · WhatsApp
+                    │  Platforms  │  ← Telegram (webhook/polling)
                     └──────┬──────┘
                            │
                     ┌──────▼──────┐
-                    │   @core     │  ← Middleware pipeline
-                    │  AgentCore  │     Event system
-                    │             │     Plugin system
+                    │   @core     │  ← Event system
+                    │  AgentCore  │     Plugin system
+                    │  Identity   │     identity.md + soul.md
+                    │  Isolation  │     User/grup directories
+                    │  Allowlist  │     Access control
                     └──────┬──────┘
                            │
-              ┌────────────┼────────────┐
-              │            │            │
-        ┌─────▼─────┐ ┌───▼────┐ ┌────▼────┐
-        │ Provider  │ │ Tools  │ │ Memory  │
-        │ -deepseek │ │        │ │         │
-        └───────────┘ └────────┘ └─────────┘
+              ┌────────────┼──────────────┐
+              │            │              │
+        ┌─────▼─────┐ ┌───▼──────┐ ┌─────▼──────┐
+        │ Provider  │ │   Skill  │ │   Memory   │
+        │ -deepseek │ │  System  │ │  SQLite    │
+        │ (stream)  │ │  Tools   │ │  TurboQuant│
+        └───────────┘ └──────────┘ └────────────┘
 ```
 
-### Data flow
+### Data Flow
 ```
-User Message
-  → Platform Adapter receives
-    → AgentCore.processMessage()
-      → Middleware pipeline (auth, logging, rate-limit...)
-        → DeepSeekProvider.complete()
-          → Tools executed (if function called)
-            → Response sent back
+User → Telegram
+  → Webhook/Poll → PlatformAdapter
+    → Allowlist check 🔒
+      → Isolation: resolve user/grup directory 📁
+        → Identity + Soul → system prompt
+          → DeepSeek API (with TurboQuant memory 🧠)
+            → Tool execution (if needed) 🔧
+              → Response back to user
+```
+
+### 🧠 TurboQuant Memory
+ClaudiaClaw punya sistem memori cerdas yang memastikan **tidak pernah lupa**:
+- **Memory Nuggets** — ekstrak fakta, preferensi, keputusan dari setiap chat
+- **Auto Compact** — kompres percakapan lama, nugget tetap diingat
+- **SQLite persistent** — data aman walau restart
+- **Per-user isolation** — setiap user punya memori sendiri
+
+### 📁 Struktur Data
+```
+📁 data/
+  ├── users/<user-id>/
+  │   ├── memory.db       (SQLite per-user)
+  │   ├── identity.md     (Personality khusus user ini)
+  │   ├── soul.md
+  │   ├── notes/
+  │   └── projects/
+  ├── groups/<group-id>/
+  │   ├── memory.db
+  │   ├── notes/
+  │   └── projects/
+  └── claudiaclaw/         (Global config)
+      ├── identity.md
+      └── soul.md
 ```
 
 ---
@@ -150,87 +265,88 @@ User Message
 
 | Package | Size | Description |
 |---------|:----:|-------------|
-| `@claudiaclaw/core` | ~3.3 KB | Agent engine — routing, middleware, lifecycle |
+| `@claudiaclaw/core` | ~3.3 KB | Engine, Identity, Isolation, Allowlist |
 | `@claudiaclaw/cli` | ~6.5 KB | CLI tool — `init`, `start`, `help` |
-| `@claudiaclaw/provider-deepseek` | ~5.1 KB | DeepSeek AI (chat + streaming + function calling) |
-| `@claudiaclaw/platform-telegram` | ~2.8 KB | Telegram bot connector |
+| `@claudiaclaw/provider-deepseek` | ~5.1 KB | DeepSeek AI (chat + streaming + tools) |
+| `@claudiaclaw/platform-telegram` | ~6.2 KB | Telegram (webhook + polling) |
 | `@claudiaclaw/tools` | ~1.0 KB | Tool/function calling registry |
-| `@claudiaclaw/memory` | ~2.5 KB | InMemoryStore + ConversationManager |
-| `@claudiaclaw/config` | ~1.2 KB | JSON/ENV config with schema validation |
+| `@claudiaclaw/skill` | ~6.0 KB | Modular skill system |
+| `@claudiaclaw/memory` | ~11 KB | SQLite + TurboQuant Memory Engine |
+| `@claudiaclaw/config` | ~1.2 KB | JSON/ENV config with schema |
 
-**Total core footprint: ~15 KB gzipped**
+---
+
+## 🧪 Contoh Skill External
+
+Buat folder `skills/my-skill/`:
+```
+skills/my-skill/
+├── package.json        # { "name": "my-skill", "version": "1.0.0" }
+└── index.js            # Ekspor tools, systemPrompt, dll
+```
+
+```javascript
+// skills/my-skill/index.js
+export const tools = [{
+  definition: {
+    type: "function",
+    function: {
+      name: "cari_berita",
+      description: "Cari berita terbaru",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string" }
+        }
+      }
+    }
+  },
+  handler: async (args) => {
+    const res = await fetch(`https://api.berita.com?q=${args.query}`)
+    return res.text()
+  }
+}]
+
+export const systemPrompt = "Kamu bisa mencari berita terbaru untuk user."
+```
 
 ---
 
 ## 🛠️ CLI Commands
 
 ```bash
-claudiaclaw                # Show help
-claudiaclaw init           # 🚀 Interactive onboarding wizard
-claudiaclaw start          # ▶  Run your agent from current dir
-claudiaclaw --version      # ℹ️  Show version
+claudiaclaw                    # Show help
+claudiaclaw init               # 🚀 Interactive onboarding
+claudiaclaw start              # ▶  Run agent
+claudiaclaw --version          # ℹ️  Version
 ```
-
----
-
-## 🧪 Example
-
-```typescript
-import { AgentCore } from "@claudiaclaw/core"
-import { DeepSeekProvider } from "@claudiaclaw/provider-deepseek"
-import { TelegramPlatform } from "@claudiaclaw/platform-telegram"
-import { ToolRegistry } from "@claudiaclaw/tools"
-
-const agent = new AgentCore()
-const tools = new ToolRegistry()
-
-// Register a tool
-tools.register("get_time", "Get current time", {
-  type: "object",
-  properties: {
-    timezone: { type: "string" }
-  }
-}, (args) => new Date().toLocaleString("en-US", { timeZone: args.timezone as string }))
-
-// Set up provider
-agent.registerProvider(new DeepSeekProvider({ apiKey: process.env.DEEPSEEK_API_KEY! }))
-
-// Set up platform
-agent.registerPlatform(new TelegramPlatform({
-  botToken: process.env.TELEGRAM_BOT_TOKEN!,
-  onMessage: async (msg) => { /* handle message */ },
-}))
-
-await agent.start()
-```
-
----
-
-## 🤝 Contributing
-
-**PRs are welcome!** We're actively looking for:
-
-- **Platform adapters** — Discord, WhatsApp, Slack, LINE
-- **Provider adapters** — OpenAI, Anthropic, Gemini
-- **Memory backends** — Redis, SQLite, PostgreSQL
-- **Tool examples** — Web search, file I/O, API integrations
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
 ## 🗺️ Roadmap
 
+### ✅ Done
 - [x] Core engine with middleware pipeline
 - [x] DeepSeek provider (chat + streaming)
-- [x] Telegram platform adapter
-- [x] CLI onboarding wizard
+- [x] Telegram platform (webhook + polling)
+- [x] CLI onboarding wizard (interactive)
+- [x] SQLite persistent storage
+- [x] TurboQuant Memory Engine + Auto Compact
+- [x] Modular skill system
+- [x] Identity & Soul files (identity.md, soul.md)
+- [x] User/group isolation (auto directory per user)
+- [x] Allowlist by ID
+- [x] Docker multi-stage build
+- [x] Docker Compose production setup
+- [x] PM2 ecosystem auto-restart
+
+### 🚧 Coming Soon
 - [ ] Discord platform adapter
-- [ ] OpenAI/Anthropic providers
-- [ ] SQLite/Redis memory backends
-- [ ] Docker deployment support
+- [ ] OpenAI / Anthropic providers
+- [ ] Discord / WhatsApp platforms
+- [ ] Redis memory backend
 - [ ] Web UI dashboard
-- [ ] Plugin marketplace
+- [ ] Skill marketplace
 
 ---
 
