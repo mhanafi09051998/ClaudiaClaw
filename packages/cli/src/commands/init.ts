@@ -180,6 +180,7 @@ TELEGRAM_BOT_TOKEN=***
           name: projectName,
           defaultPrompt: "Kamu adalah asisten AI yang helpful, ramah, dan cekatan.",
           maxHistory: 50,
+          compactThreshold: 40,
         },
         deepseek: {
           model,

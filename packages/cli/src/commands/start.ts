@@ -4,7 +4,8 @@ import { AgentCore } from "@claudiaclaw/core"
 import { DeepSeekProvider } from "@claudiaclaw/provider-deepseek"
 import { TelegramPlatform } from "@claudiaclaw/platform-telegram"
 import { ToolRegistry } from "@claudiaclaw/tools"
-import { ConversationManager, InMemoryStore } from "@claudiaclaw/memory"
+import { InMemoryStore } from "@claudiaclaw/memory"
+import { TurboQuantEngine, AutoCompactManager, TurboQuantConversationManager } from "@claudiaclaw/memory"
 import { ConfigManager } from "@claudiaclaw/config"
 import type { Message } from "@claudiaclaw/core"
 
@@ -59,6 +60,7 @@ export async function start() {
     "deepseek.model": { type: "string", default: "deepseek-v4-flash", env: "DEEPSEEK_MODEL" },
     "telegram.botToken": { type: "string", required: true, env: "TELEGRAM_BOT_TOKEN" },
     "agent.defaultPrompt": { type: "string", default: "Kamu adalah asisten AI yang helpful, ramah, dan cekatan." },
+    "agent.compactThreshold": { type: "number", default: 40 },
     "agent.maxHistory": { type: "number", default: 50, env: "MAX_HISTORY" },
     "agent.name": { type: "string", default: "ClaudiaClaw Agent" },
   })
@@ -83,7 +85,12 @@ export async function start() {
   // ─── Boot ──────────────────────────────────────────
   const agent = new AgentCore()
   const store = new InMemoryStore()
-  const conversations = new ConversationManager(store, config.get<number>("agent.maxHistory")!)
+  const turboQuant = new TurboQuantEngine({
+    compactThreshold: config.get<number>("agent.compactThreshold") ?? 40,
+    maxNuggetsPerConv: 100,
+  })
+  const autoCompact = new AutoCompactManager(store, turboQuant)
+  const conversations = new TurboQuantConversationManager(store, turboQuant, autoCompact, config.get<number>("agent.maxHistory")!)
   const tools = new ToolRegistry()
   const personas = new PersonaStore()
 
