@@ -1,6 +1,6 @@
 <div align="center">
   <br/>
-  <h1>💅🏻 ClaudiaClaw</h1>
+  <h1>🦞 ClaudiaClaw</h1>
   <p><strong>Super modern, highly efficient & effective agent framework</strong></p>
   <p>Built from scratch with <strong>DeepSeek</strong> · TypeScript-native · ESM-first</p>
   <br/>
@@ -22,7 +22,7 @@
 
 Built **from scratch in 2026** with modern JavaScript, zero legacy patterns, and one obsession: **maximum efficiency for real agent workloads**.
 
-| Feature | ClaudiaClaw 💅🏻 | OpenClaw |
+| Feature | ClaudiaClaw 🦞 | OpenClaw |
 |---------|:-------------:|:--------:|
 | **Stack** | Pure ESM + TypeScript 5.7 | Mixed CJS/ESM |
 | **AI Provider** | DeepSeek-first, pluggable | Multi-provider (heavier) |
