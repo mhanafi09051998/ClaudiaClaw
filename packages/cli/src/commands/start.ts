@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "fs"
 import { join } from "path"
-import { AgentCore, IdentityManager, IsolationManager, Allowlist } from "@claudiaclaw/core"
+import { AgentCore, IdentityManager, IsolationManager, AllowlistFile, PairingManager } from "@claudiaclaw/core"
 import type { IsolatedContext } from "@claudiaclaw/core"
 import { DeepSeekProvider } from "@claudiaclaw/provider-deepseek"
 import { TelegramPlatform } from "@claudiaclaw/platform-telegram"
@@ -131,12 +131,15 @@ export async function start() {
 
   // ─── Isolation & Allowlist ─────────────────────────
   const isolation = new IsolationManager("./data")
-  const allowlist = new Allowlist({
+  const allowlist = new AllowlistFile("./data/claudiaclaw", {
     users: (config.get<string>("allowlist.users") ?? "").split(",").filter(Boolean),
     groups: (config.get<string>("allowlist.groups") ?? "").split(",").filter(Boolean),
     owners: (config.get<string>("allowlist.owners") ?? "").split(",").filter(Boolean),
-    defaultAllow: !config.get<boolean>("allowlist.enabled"),
   })
+  allowlist.load()
+
+  // Pairing manager
+  const pairingMgr = new PairingManager("./data/claudiaclaw")
 
   if (config.get<boolean>("allowlist.enabled")) {
     console.log("[Allowlist] Enabled — restricted access")
@@ -179,7 +182,17 @@ export async function start() {
     if (!allowlist.isAllowed(chatType, chatId, userId)) {
       console.log(`[Allowlist] Blocked: user=${userId} chat=${chatId}`)
       if (platform) {
-        await platform.sendMessage(chatId, "Maaf, akses Anda belum diizinkan. Hubungi admin untuk allowlist.")
+        // Generate pairing code
+        const pairing = pairingMgr.generate(userId, chatType, chatId, String(msg.metadata?.username ?? ""))
+        const msg = `⛔ Access not configured.
+
+Your Telegram user ID: ${userId}
+Your pairing code: ` + `${pairing.code}` + `
+
+Ask the bot owner to approve with:
+claudiaclaw pairing approve telegram ${pairing.code}`
+
+        await platform.sendMessage(chatId, msg)
       }
       return
     }

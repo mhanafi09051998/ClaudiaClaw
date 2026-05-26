@@ -27,6 +27,17 @@ async function main() {
     case "-v":
       console.log(`ClaudiaClaw v${pkg.version}`)
       break
+    case "pairing": {
+      const sub = args[1]
+      if (sub === "approve" && args[2] && args[3]) {
+        const { pairingApprove } = await import("./commands/approve.js")
+        await pairingApprove(args[2], args[3])
+      } else {
+        console.log("Usage: claudiaclaw pairing approve <platform> <code>")
+        console.log("Example: claudiaclaw pairing approve telegram 55GAGP8E")
+      }
+      break
+    }
     case "help":
     case "--help":
     case "-h":
