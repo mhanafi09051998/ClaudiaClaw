@@ -7,6 +7,9 @@
 
 set -e
 
+# ClaudiaClaw Installer — Linux only
+# macOS may work but not officially supported
+
 BOLD='\033[1m'
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
