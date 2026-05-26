@@ -12,15 +12,17 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean",
+    "build": "tsup",
     "dev": "tsup src/index.ts --format esm --dts --watch",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@claudiaclaw/core": "*"
+    "@claudiaclaw/core": "*",
+    "sql.js": "^1.11.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
-    "tsup": "^8.3.0"
+    "tsup": "^8.3.0",
+    "@types/sql.js": "^1.4.0"
   }
 }

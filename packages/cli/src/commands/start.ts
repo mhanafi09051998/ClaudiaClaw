@@ -4,7 +4,7 @@ import { AgentCore } from "@claudiaclaw/core"
 import { DeepSeekProvider } from "@claudiaclaw/provider-deepseek"
 import { TelegramPlatform } from "@claudiaclaw/platform-telegram"
 import { ToolRegistry } from "@claudiaclaw/tools"
-import { FileStore } from "@claudiaclaw/memory"
+import { SQLiteStore } from "@claudiaclaw/memory"
 import { TurboQuantEngine, AutoCompactManager, TurboQuantConversationManager } from "@claudiaclaw/memory"
 import { ConfigManager } from "@claudiaclaw/config"
 import type { Message } from "@claudiaclaw/core"
@@ -84,7 +84,8 @@ export async function start() {
 
   // ─── Boot ──────────────────────────────────────────
   const agent = new AgentCore()
-  const store = new FileStore()
+  const store = new SQLiteStore()
+  await store.init()
   const turboQuant = new TurboQuantEngine({
     compactThreshold: config.get<number>("agent.compactThreshold") ?? 40,
     maxNuggetsPerConv: 100,
@@ -237,7 +238,7 @@ dan tanyakan apa yang bisa kamu bantu. Jadilah versi dirimu sesuai keinginan use
   // Flush persistent store on shutdown
   async function shutdown() {
     await agent.stop()
-    store.flush()
+    store.close()
     process.exit(0)
   }
   process.on("SIGINT", shutdown)

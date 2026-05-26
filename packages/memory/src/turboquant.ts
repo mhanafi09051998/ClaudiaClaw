@@ -14,6 +14,7 @@
 import type { Message, Conversation } from "@claudiaclaw/core"
 import { InMemoryStore, ConversationManager } from "./base.js"
 import type { FileStore } from "./filestore.js"
+import type { SQLiteStore } from "./sqlitestore.js"
 import type { MemoryStore } from "./base.js"
 
 // ─── Types ──────────────────────────────────────────
@@ -248,11 +249,11 @@ function extractKeywords(text: string): string[] {
 export class TurboQuantEngine {
   private nuggets: Map<string, MemoryNugget> = new Map()
   private config: TurboQuantConfig
-  private fileStore?: FileStore
+  private persistentStore?: FileStore | SQLiteStore
 
-  constructor(config?: Partial<TurboQuantConfig>, fileStore?: FileStore) {
+  constructor(config?: Partial<TurboQuantConfig>, persistentStore?: FileStore | SQLiteStore) {
     this.config = { ...DEFAULT_CONFIG, ...config }
-    this.fileStore = fileStore
+    this.persistentStore = persistentStore
   }
 
   /** Update config */
@@ -414,7 +415,7 @@ export class TurboQuantEngine {
 
   /** Persist nuggets for a conversation to file store */
   private persistConversationNuggets(convId: string): void {
-    if (!this.fileStore) return
+    if (!this.persistentStore) return
     const nuggets = this.getConversationNuggets(convId).map((n) => ({
       id: n.id,
       type: n.type,
@@ -426,13 +427,13 @@ export class TurboQuantEngine {
       sourceConvId: n.sourceConvId,
       sourceMessageId: n.sourceMessageId,
     }))
-    this.fileStore.saveNuggets(convId, nuggets)
+    this.persistentStore.saveNuggets(convId, nuggets)
   }
 
   /** Load nuggets from file store */
   loadNuggetsFromStore(convId: string): void {
-    if (!this.fileStore) return
-    const stored = this.fileStore.loadNuggets(convId)
+    if (!this.persistentStore) return
+    const stored = this.persistentStore.loadNuggets(convId)
     if (!stored || stored.length === 0) return
 
     for (const n of stored) {
@@ -477,11 +478,11 @@ export class TurboQuantEngine {
 
 export class AutoCompactManager {
   private engine: TurboQuantEngine
-  private store: InMemoryStore | FileStore
+  private store: InMemoryStore | FileStore | SQLiteStore
   private config: TurboQuantConfig
 
   constructor(
-    store: InMemoryStore | FileStore,
+    store: InMemoryStore | FileStore | SQLiteStore,
     engine: TurboQuantEngine,
     config?: Partial<TurboQuantConfig>,
   ) {
@@ -571,7 +572,7 @@ export class TurboQuantConversationManager extends ConversationManager {
   private compactThreshold: number
 
   constructor(
-    store: InMemoryStore | FileStore,
+    store: InMemoryStore | FileStore | SQLiteStore,
     turboEngine: TurboQuantEngine,
     autoCompact: AutoCompactManager,
     defaultHistoryLimit = 100,

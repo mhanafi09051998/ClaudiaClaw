@@ -18,3 +18,7 @@ export {
 // ─── File Store ──────────────────────────────────────
 export { FileStore } from "./filestore.js"
 export type { FileStoreOptions } from "./filestore.js"
+
+// ─── SQLite Store ────────────────────────────────────
+export { SQLiteStore } from "./sqlitestore.js"
+export type { SQLiteStoreOptions } from "./sqlitestore.js"
