@@ -6,7 +6,31 @@ import { TelegramPlatform } from "@claudiaclaw/platform-telegram"
 import { ToolRegistry } from "@claudiaclaw/tools"
 import { ConversationManager, InMemoryStore } from "@claudiaclaw/memory"
 import { ConfigManager } from "@claudiaclaw/config"
+import type { Message } from "@claudiaclaw/core"
 
+// ─── User personality store ─────────────────────────
+interface UserPrefs {
+  persona: string     // system prompt for this user
+  onboarded: boolean  // has completed onboarding
+}
+
+class PersonaStore {
+  private store = new Map<string, UserPrefs>()
+
+  get(userId: string): UserPrefs | undefined {
+    return this.store.get(userId)
+  }
+
+  set(userId: string, prefs: UserPrefs): void {
+    this.store.set(userId, prefs)
+  }
+
+  isOnboarded(userId: string): boolean {
+    return this.store.get(userId)?.onboarded ?? false
+  }
+}
+
+// ─── Main ────────────────────────────────────────────
 export async function start() {
   const cwd = process.cwd()
   const envPath = join(cwd, ".env")
@@ -34,7 +58,7 @@ export async function start() {
     "deepseek.apiKey": { type: "string", required: true, env: "DEEPSEEK_API_KEY" },
     "deepseek.model": { type: "string", default: "deepseek-v4-flash", env: "DEEPSEEK_MODEL" },
     "telegram.botToken": { type: "string", required: true, env: "TELEGRAM_BOT_TOKEN" },
-    "agent.systemPrompt": { type: "string", default: "You are a helpful assistant.", env: "SYSTEM_PROMPT" },
+    "agent.defaultPrompt": { type: "string", default: "Kamu adalah asisten AI yang helpful, ramah, dan cekatan." },
     "agent.maxHistory": { type: "number", default: 50, env: "MAX_HISTORY" },
     "agent.name": { type: "string", default: "ClaudiaClaw Agent" },
   })
@@ -61,14 +85,12 @@ export async function start() {
   const store = new InMemoryStore()
   const conversations = new ConversationManager(store, config.get<number>("agent.maxHistory")!)
   const tools = new ToolRegistry()
+  const personas = new PersonaStore()
+
+  const defaultPrompt = config.get<string>("agent.defaultPrompt")!
 
   // Register built-in tools
-  tools.register(
-    "ping",
-    "Simple ping to test connectivity",
-    { type: "object", properties: {} },
-    () => "pong!",
-  )
+  tools.register("ping", "Simple ping to test connectivity", { type: "object", properties: {} }, () => "pong!")
 
   tools.register(
     "get_time",
@@ -92,16 +114,73 @@ export async function start() {
   })
   agent.registerProvider(provider)
 
-  // Message handler
-  async function handleMessage(msg: import("@claudiaclaw/core").Message) {
+  // ─── Message handler ───────────────────────────────
+  async function handleMessage(msg: Message) {
     const chatId = String(msg.metadata?.chatId ?? "")
+    const userId = String(msg.metadata?.userId ?? chatId)
     if (!msg.content) return
 
+    const platform = agent.getPlatform("telegram")
     const convId = `telegram:${chatId}`
+
+    // ── Onboarding flow ──//
+    if (!personas.isOnboarded(userId)) {
+      const firstMsg = msg.content.toLowerCase().trim()
+
+      // Check if user is responding to the personality question
+      if (personas.get(userId)?.onboarded === false && firstMsg) {
+        // User has replied with their desired personality
+        // We'll use this as context but also let the AI handle the conversation
+        const prompt = `Kamu adalah asisten AI yang baru saja ditanyai tentang kepribadian yang diinginkan user. 
+User ingin kamu menjadi seperti ini: "${firstMsg}".
+
+Gunakan deskripsi ini sebagai pedoman kepribadianmu. Jawab dengan ramah, perkenalkan dirimu dengan nama Claudia,
+dan tanyakan apa yang bisa kamu bantu. Jadilah versi dirimu sesuai keinginan user! 🦞`
+
+        personas.set(userId, { persona: firstMsg, onboarded: true })
+
+        await conversations.getOrCreate(convId, "telegram", chatId)
+        await conversations.addMessage(convId, msg)
+
+        const ctx = await conversations.buildContext(convId, prompt)
+        const result = await provider.complete(ctx)
+        await conversations.addMessage(convId, result.message)
+
+        if (platform && result.message.content) {
+          await platform.sendMessage(chatId, result.message.content)
+        }
+        return
+      }
+
+      // First interaction — ask about personality
+      const greeting =
+        `Halo! Aku ClaudiaClaw 🦞 — asisten AI ciptaan kamu.\n\n` +
+        `Aku bisa jadi apapun yang kamu mau. Ceritakan, kamu ingin aku jadi asisten seperti apa?\n\n` +
+        `Contoh:\n` +
+        `• "Kamu adalah asisten yang formal dan profesional"\n` +
+        `• "Kamu adalah teman ngobrol yang santai dan humoris"\n` +
+        `• "Kamu adalah mentor coding yang sabar dan detail"\n` +
+        `• Bebas! Ceritakan gaya yang kamu inginkan 😊`
+
+      // Mark as onboarding in progress
+      personas.set(userId, { persona: "", onboarded: false })
+
+      await conversations.getOrCreate(convId, "telegram", chatId)
+      await conversations.addMessage(convId, msg)
+
+      if (platform) {
+        await platform.sendMessage(chatId, greeting)
+      }
+      return
+    }
+
+    // ── Normal message flow ──//
+    const userPrompt = personas.get(userId)?.persona ?? defaultPrompt
+
     await conversations.getOrCreate(convId, "telegram", chatId)
     await conversations.addMessage(convId, msg)
 
-    const context = await conversations.buildContext(convId, config.get<string>("agent.systemPrompt"))
+    const context = await conversations.buildContext(convId, userPrompt)
     const result = await provider.complete(context, { tools: tools.getAllDefinitions() })
     await conversations.addMessage(convId, result.message)
 
@@ -109,11 +188,7 @@ export async function start() {
     if (result.message.toolCalls?.length) {
       for (const tc of result.message.toolCalls) {
         const toolResult = await agent.executeToolCall(tc, (name, args) =>
-          tools.execute({
-            id: tc.id,
-            type: "function",
-            function: { name, arguments: JSON.stringify(args) },
-          }),
+          tools.execute({ id: tc.id, type: "function", function: { name, arguments: JSON.stringify(args) } }),
         )
         await conversations.addMessage(convId, {
           id: crypto.randomUUID(),
@@ -125,27 +200,25 @@ export async function start() {
         })
       }
 
-      const updatedContext = await conversations.buildContext(convId, config.get<string>("agent.systemPrompt"))
+      const updatedContext = await conversations.buildContext(convId, userPrompt)
       const finalResult = await provider.complete(updatedContext)
       await conversations.addMessage(convId, finalResult.message)
 
-      const platform = agent.getPlatform("telegram")
       if (platform && finalResult.message.content) {
         await platform.sendMessage(chatId, finalResult.message.content)
       }
     } else if (result.message.content) {
-      const platform = agent.getPlatform("telegram")
       if (platform) {
         await platform.sendMessage(chatId, result.message.content)
       }
     }
   }
 
-  // Platform
+  // ─── Platform ───────────────────────────────────────
   const telegram = new TelegramPlatform({ botToken, onMessage: handleMessage })
   agent.registerPlatform(telegram)
 
-  // Events
+  // ─── Events ─────────────────────────────────────────
   const agentName = config.get<string>("agent.name") ?? "ClaudiaClaw"
   agent.on("agent:start", () => console.log(`\n🦞 ${agentName} is running! Press Ctrl+C to stop.\n`))
   agent.on("error", (err) => console.error("💥 Error:", err))

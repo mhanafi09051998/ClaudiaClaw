@@ -71,7 +71,7 @@ export async function init() {
   console.log("Selamat datang di ClaudiaClaw! 🎉")
   console.log("Kita akan setup agent pertamamu secara interaktif.\n")
 
-  const TOTAL_STEPS = 6
+  const TOTAL_STEPS = 5
 
   // ── Step 1: Project Info ──//
   showStep(1, TOTAL_STEPS, "Project Info")
@@ -125,15 +125,8 @@ export async function init() {
     }
   }
 
-  // ── Step 4: Agent Personality ──//
-  showStep(4, TOTAL_STEPS, "Agent Personality")
-  const systemPrompt = await ask(
-    "System prompt / personality agent",
-    "Kamu adalah asisten AI yang helpful, ramah, dan cekatan.",
-  )
-
-  // ── Step 5: Project Scaffold ──//
-  showStep(5, TOTAL_STEPS, "Generate Project")
+  // ── Step 4: Project Scaffold ──//
+  showStep(4, TOTAL_STEPS, "Generate Project")
   console.log("Membuat struktur project...")
 
   const srcDir = join(projectDir, "src")
@@ -172,7 +165,6 @@ export async function init() {
 DEEPSEEK_API_KEY=***
 DEEPSEEK_MODEL=${model}
 TELEGRAM_BOT_TOKEN=***
-SYSTEM_PROMPT=${systemPrompt}
 `
   writeFileSync(join(projectDir, ".env"), envContent)
 
@@ -186,7 +178,7 @@ SYSTEM_PROMPT=${systemPrompt}
       {
         agent: {
           name: projectName,
-          systemPrompt,
+          defaultPrompt: "Kamu adalah asisten AI yang helpful, ramah, dan cekatan.",
           maxHistory: 50,
         },
         deepseek: {
@@ -198,8 +190,8 @@ SYSTEM_PROMPT=${systemPrompt}
     ),
   )
 
-  // ── Step 6: Done ──//
-  showStep(6, TOTAL_STEPS, "Done! 🎉")
+  // ── Step 5: Done ──//
+  showStep(5, TOTAL_STEPS, "Done! 🎉")
 
   console.log(`
 ✅ Project "${projectName}" berhasil dibuat!

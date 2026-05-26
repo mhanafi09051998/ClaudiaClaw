@@ -11,11 +11,7 @@ config.defineSchema({
   "deepseek.apiKey": { type: "string", required: true, env: "DEEPSEEK_API_KEY" },
   "deepseek.model": { type: "string", default: "deepseek-v4-flash", env: "DEEPSEEK_MODEL" },
   "telegram.botToken": { type: "string", required: true, env: "TELEGRAM_BOT_TOKEN" },
-  "agent.systemPrompt": {
-    type: "string",
-    default: "You are Claudia, a helpful assistant. Be concise and friendly.",
-    env: "SYSTEM_PROMPT",
-  },
+  "agent.defaultPrompt": { type: "string", default: "You are Claudia, a helpful assistant. Be concise and friendly." },
   "agent.maxHistory": { type: "number", default: 50, env: "MAX_HISTORY" },
 })
 
@@ -86,7 +82,7 @@ async function handleMessage(msg: import("@claudiaclaw/core").Message) {
   await conversations.addMessage(convId, msg)
 
   // Build context with history
-  const context = await conversations.buildContext(convId, config.get<string>("agent.systemPrompt"))
+  const context = await conversations.buildContext(convId, config.get<string>("agent.defaultPrompt"))
 
   // Get AI completion
   const result = await provider.complete(context, {
