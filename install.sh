@@ -92,66 +92,16 @@ echo ""
 echo -e "${BOLD}🔨 Building packages...${NC}"
 npm run build 2>&1 | tail -1
 
-# ─── .env ──────────────────────────────────────────
-
-if [ ! -f "$INSTALL_DIR/.env" ]; then
-  cp "$INSTALL_DIR/.env.example" "$INSTALL_DIR/.env"
-  echo ""
-  echo -e "${YELLOW}📝 File .env sudah dibuat. Isi API key & token:${NC}"
-  echo "  nano $INSTALL_DIR/.env"
-fi
-
-# ─── Done ──────────────────────────────────────────
+# ─── Auto-run interactive onboarding ───────────────
+# Ini akan: minta API key → minta token → setup .env + config → tawarin PM2
 
 echo ""
 echo -e "${GREEN}${BOLD}✅ ClaudiaClaw berhasil diinstall!${NC}"
 echo ""
 echo -e "${BOLD}📁 Lokasi:${NC} $INSTALL_DIR"
 echo ""
-
-# ─── Interactive: PM2 ──────────────────────────────
-
-if [ -t 0 ]; then
-  echo -ne "${BOLD}🔧 Setup PM2 auto-restart sekarang? (y/N): ${NC}"
-  read -r SETUP_PM2
-  if [ "$SETUP_PM2" = "y" ] || [ "$SETUP_PM2" = "Y" ]; then
-    echo ""
-    echo -e "${BOLD}📦 Installing PM2...${NC}"
-    npm install -g pm2 2>&1 | tail -1
-    cd "$INSTALL_DIR"
-    pm2 start ecosystem.config.js
-    pm2 save
-    echo -e "  ${GREEN}✓${NC} PM2 started — auto-restart aktif"
-    echo ""
-    echo -e "${YELLOW}⚠  Jangan lupa: isi DEEPSEEK_API_KEY & TELEGRAM_BOT_TOKEN di .env${NC}"
-    echo -e "${YELLOW}   lalu jalankan: pm2 restart claudiaclaw${NC}"
-    echo ""
-    echo -ne "${BOLD}🚀 Mau setting PM2 startup (auto-start pas reboot)? (y/N): ${NC}"
-    read -r SETUP_STARTUP
-    if [ "$SETUP_STARTUP" = "y" ] || [ "$SETUP_STARTUP" = "Y" ]; then
-      pm2 startup 2>&1 | tail -3
-      echo -e "  ${GREEN}✓${NC} PM2 startup configured"
-    fi
-  fi
-
-  # ─── Interactive: onboarding ─────────────────────
-  echo ""
-  echo -ne "${BOLD}🚀 Jalankan onboarding wizard sekarang? (y/N): ${NC}"
-  read -r RUN_INIT
-  if [ "$RUN_INIT" = "y" ] || [ "$RUN_INIT" = "Y" ]; then
-    echo ""
-    node "$INSTALL_DIR/packages/cli/dist/index.js" init
-  fi
-fi
-
-# ─── Final instructions ────────────────────────────
-
+echo -e "${BOLD}Sekarang kita akan setup agent pertamamu...${NC}"
 echo ""
-echo -e "${BOLD}📋 Langkah selanjutnya:${NC}"
-echo "  1. nano $INSTALL_DIR/.env    — isi API key & token"
-echo "  2. cd $INSTALL_DIR && npm start   — jalankan agent"
-echo ""
-echo -e "${BOLD}📖 Butuh bantuan:${NC}"
-echo "  node $INSTALL_DIR/packages/cli/dist/index.js --help"
-echo "  https://github.com/mhanafi09051998/ClaudiaClaw"
-echo ""
+
+cd "$INSTALL_DIR"
+node ./packages/cli/dist/index.js init
