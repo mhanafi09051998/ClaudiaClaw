@@ -10,9 +10,11 @@
     "build": "npm run build --workspaces",
     "clean": "npm run clean --workspaces",
     "dev": "npm run dev --workspaces --if-present",
+    "start": "claudiaclaw start",
+    "init": "claudiaclaw init",
     "test": "npm run test --workspaces --if-present",
     "lint": "eslint packages/*/src --ext .ts",
-    "format": "prettier --write 'packages/*/src/**/*.ts'"
+    "format": "prettier --write 'packages/*/src/**/*.ts'",
   },
   "devDependencies": {
     "typescript": "^5.7.0",
