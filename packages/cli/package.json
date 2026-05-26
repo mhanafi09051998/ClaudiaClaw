@@ -1,0 +1,35 @@
+{
+  "name": "@claudiaclaw/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "claudiaclaw": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@claudiaclaw/core": "*",
+    "@claudiaclaw/provider-deepseek": "*",
+    "@claudiaclaw/platform-telegram": "*",
+    "@claudiaclaw/tools": "*",
+    "@claudiaclaw/memory": "*",
+    "@claudiaclaw/config": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "tsup": "^8.3.0"
+  }
+}
