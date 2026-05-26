@@ -1,11 +1,8 @@
 {
-  "name": "@claudiaclaw/cli",
+  "name": "@claudiaclaw/skill",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "bin": {
-    "claudiaclaw": "./dist/index.js"
-  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -21,15 +18,9 @@
   },
   "dependencies": {
     "@claudiaclaw/core": "*",
-    "@claudiaclaw/provider-deepseek": "*",
-    "@claudiaclaw/platform-telegram": "*",
-    "@claudiaclaw/tools": "*",
-    "@claudiaclaw/memory": "*",
-    "@claudiaclaw/config": "*",
-    "@claudiaclaw/skill": "*"
+    "@claudiaclaw/tools": "*"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
     "typescript": "^5.7.0",
     "tsup": "^8.3.0"
   }

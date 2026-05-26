@@ -1,5 +1,6 @@
 import type { ToolDefinition, ToolCall } from "@claudiaclaw/core"
 
+export type { ToolDefinition } from "@claudiaclaw/core"
 export type ToolHandler = (args: Record<string, unknown>) => Promise<string> | string
 
 export interface RegisteredTool {

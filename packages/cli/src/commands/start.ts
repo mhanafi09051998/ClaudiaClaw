@@ -1,9 +1,8 @@
-import { existsSync, readFileSync } from "fs"
-import { join } from "path"
-import { AgentCore } from "@claudiaclaw/core"
+import { AgentCore, IdentityManager } from "@claudiaclaw/core"
 import { DeepSeekProvider } from "@claudiaclaw/provider-deepseek"
 import { TelegramPlatform } from "@claudiaclaw/platform-telegram"
 import { ToolRegistry } from "@claudiaclaw/tools"
+import { SkillManager, createBasicSkill } from "@claudiaclaw/skill"
 import { SQLiteStore } from "@claudiaclaw/memory"
 import { TurboQuantEngine, AutoCompactManager, TurboQuantConversationManager } from "@claudiaclaw/memory"
 import { ConfigManager } from "@claudiaclaw/config"
@@ -95,25 +94,27 @@ export async function start() {
   const tools = new ToolRegistry()
   const personas = new PersonaStore()
 
+  // ─── Identity & Soul ───────────────────────────────
+  const identity = new IdentityManager()
+  identity.init()
+  const systemIdentity = identity.getSystemPrompt()
+
+  // ─── Skills (Modular) ─────────────────────────────
+  const skillManager = new SkillManager({ skillsDir: "./skills" })
+  
+  // Register built-in skills
+  skillManager.register(createBasicSkill())
+  
+  // Load all skills
+  await skillManager.loadAll(agent, tools)
+  
+  // Scan external skills directory
+  const extSkills = await skillManager.scanDirectory()
+  if (extSkills > 0) {
+    console.log(`[Skills] Loaded ${extSkills} external skill(s)`)
+  }
+
   const defaultPrompt = config.get<string>("agent.defaultPrompt")!
-
-  // Register built-in tools
-  tools.register("ping", "Simple ping to test connectivity", { type: "object", properties: {} }, () => "pong!")
-
-  tools.register(
-    "get_time",
-    "Get current time in a timezone",
-    {
-      type: "object",
-      properties: {
-        timezone: { type: "string", description: "Timezone like Asia/Jakarta" },
-      },
-    },
-    (args) => {
-      const tz = (args.timezone as string) ?? "UTC"
-      return new Date().toLocaleString("en-US", { timeZone: tz })
-    },
-  )
 
   // Provider
   const provider = new DeepSeekProvider({
@@ -187,11 +188,13 @@ dan tanyakan apa yang bisa kamu bantu. Jadilah versi dirimu sesuai keinginan use
 
     // ── Normal message flow ──//
     const userPrompt = personas.get(userId)?.persona ?? defaultPrompt
+    const skillContext = skillManager.getCombinedSystemPrompt()
+    const fullPrompt = [systemIdentity, skillContext, userPrompt].filter(Boolean).join("\n\n")
 
     await conversations.getOrCreate(convId, "telegram", chatId)
     await conversations.addMessage(convId, msg)
 
-    const context = await conversations.buildContext(convId, userPrompt)
+    const context = await conversations.buildContext(convId, fullPrompt)
     const result = await provider.complete(context, { tools: tools.getAllDefinitions() })
     await conversations.addMessage(convId, result.message)
 
@@ -211,7 +214,7 @@ dan tanyakan apa yang bisa kamu bantu. Jadilah versi dirimu sesuai keinginan use
         })
       }
 
-      const updatedContext = await conversations.buildContext(convId, userPrompt)
+      const updatedContext = await conversations.buildContext(convId, fullPrompt)
       const finalResult = await provider.complete(updatedContext)
       await conversations.addMessage(convId, finalResult.message)
 
