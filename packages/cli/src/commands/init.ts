@@ -1,16 +1,19 @@
 import { createInterface } from "readline/promises"
-import { existsSync, mkdirSync, writeFileSync, copyFileSync, readdirSync } from "fs"
+import { existsSync, mkdirSync, writeFileSync } from "fs"
 import { join, dirname } from "path"
 import { fileURLToPath } from "url"
 import { stdin as input, stdout as output } from "process"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const __root = join(__dirname, "../../..")
 
 // ─── Prompt helpers ──────────────────────────────────
 
 function rl() {
-  return createInterface({ input, output })
+  return createInterface({
+    input,
+    output,
+    terminal: input.isTTY,
+  })
 }
 
 async function ask(question: string, defaultVal?: string): Promise<string> {
@@ -87,7 +90,11 @@ export async function init() {
 
   // ── Step 2: AI Provider ──//
   showStep(2, TOTAL_STEPS, "AI Provider")
-  const providerIdx = await select("Pilih AI Provider:", ["DeepSeek (default)", "OpenAI (coming soon)", "Anthropic (coming soon)"], 0)
+  const providerIdx = await select(
+    "Pilih AI Provider:",
+    ["DeepSeek (default)", "OpenAI (coming soon)", "Anthropic (coming soon)"],
+    0,
+  )
 
   if (providerIdx !== 0) {
     console.log("⚠️  Untuk saat ini hanya DeepSeek yang tersedia. Akan menggunakan DeepSeek.")
@@ -103,7 +110,11 @@ export async function init() {
 
   // ── Step 3: Platform ──//
   showStep(3, TOTAL_STEPS, "Platform Connector")
-  const platformIdx = await select("Pilih platform chat:", ["Telegram (default)", "Discord (coming soon)", "WhatsApp (coming soon)"], 0)
+  const platformIdx = await select(
+    "Pilih platform chat:",
+    ["Telegram (default)", "Discord (coming soon)", "WhatsApp (coming soon)"],
+    0,
+  )
 
   let botToken = ""
   if (platformIdx === 0) {
@@ -116,13 +127,15 @@ export async function init() {
 
   // ── Step 4: Agent Personality ──//
   showStep(4, TOTAL_STEPS, "Agent Personality")
-  const systemPrompt = await ask("System prompt / personality agent", "Kamu adalah asisten AI yang helpful, ramah, dan cekatan.")
+  const systemPrompt = await ask(
+    "System prompt / personality agent",
+    "Kamu adalah asisten AI yang helpful, ramah, dan cekatan.",
+  )
 
   // ── Step 5: Project Scaffold ──//
   showStep(5, TOTAL_STEPS, "Generate Project")
   console.log("Membuat struktur project...")
 
-  // Create project structure
   const srcDir = join(projectDir, "src")
   mkdirSync(srcDir, { recursive: true })
 
@@ -156,9 +169,9 @@ export async function init() {
 
   // .env
   const envContent = `# ClaudiaClaw Configuration
-DEEPSEEK_API_KEY=${apiKey}
+DEEPSEEK_API_KEY=***
 DEEPSEEK_MODEL=${model}
-TELEGRAM_BOT_TOKEN=${botToken}
+TELEGRAM_BOT_TOKEN=***
 SYSTEM_PROMPT=${systemPrompt}
 `
   writeFileSync(join(projectDir, ".env"), envContent)
@@ -185,7 +198,7 @@ SYSTEM_PROMPT=${systemPrompt}
     ),
   )
 
-  // ── Step 6: Summary ──//
+  // ── Step 6: Done ──//
   showStep(6, TOTAL_STEPS, "Done! 🎉")
 
   console.log(`
@@ -202,26 +215,26 @@ SYSTEM_PROMPT=${systemPrompt}
 
   cd ${projectName}
   npm install
-  npm start
+  npx claudiaclaw start
 
 📚  Butuh bantuan? claudiaclaw --help
 `)
-
-  const openNow = await confirm("Buka project directory sekarang?", false)
-  if (openNow) {
-    console.log(`\n👉 cd ${projectDir}`)
-  }
 
   const gitInit = await confirm("Init git repository?", true)
   if (gitInit) {
     const { execSync } = await import("child_process")
     try {
       execSync("git init", { cwd: projectDir, stdio: "ignore" })
-      execSync('git add -A', { cwd: projectDir, stdio: "ignore" })
-      execSync('git commit -m "init: ClaudiaClaw project scaffold"', { cwd: projectDir, stdio: "ignore" })
+      execSync("git add -A", { cwd: projectDir, stdio: "ignore" })
+      execSync('git commit -m "init: ClaudiaClaw project scaffold"', {
+        cwd: projectDir,
+        stdio: "ignore",
+      })
       console.log("✅ Git repository initialized.")
     } catch {
       console.log("⚠️  Git init skipped (git not installed or already a repo).")
     }
   }
+
+  console.log("\nTerima kasih sudah menggunakan ClaudiaClaw! 🦞")
 }

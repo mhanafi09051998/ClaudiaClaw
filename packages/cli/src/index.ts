@@ -6,29 +6,32 @@ import { fileURLToPath } from "url"
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pkg = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf-8"))
 
-const args = process.argv.slice(2)
-const command = args[0] ?? "help"
+async function main() {
+  const args = process.argv.slice(2)
+  const command = args[0] ?? "help"
 
-switch (command) {
-  case "init":
-  case "onboard":
-    const { init } = await import("./commands/init.js")
-    await init()
-    break
-  case "start":
-    const { start } = await import("./commands/start.js")
-    await start()
-    break
-  case "version":
-  case "--version":
-  case "-v":
-    console.log(`ClaudiaClaw v${pkg.version}`)
-    break
-  case "help":
-  case "--help":
-  case "-h":
-  default:
-    console.log(`
+  switch (command) {
+    case "init":
+    case "onboard": {
+      const { init } = await import("./commands/init.js")
+      await init()
+      break
+    }
+    case "start": {
+      const { start } = await import("./commands/start.js")
+      await start()
+      break
+    }
+    case "version":
+    case "--version":
+    case "-v":
+      console.log(`ClaudiaClaw v${pkg.version}`)
+      break
+    case "help":
+    case "--help":
+    case "-h":
+    default:
+      console.log(`
 🦞 ClaudiaClaw — Super modern agent framework
 
   USAGE
@@ -44,5 +47,11 @@ switch (command) {
     claudiaclaw init      Interactive setup
     claudiaclaw start     Run your agent
 `)
-    break
+      break
+  }
 }
+
+main().catch((err) => {
+  console.error("❌ Error:", err.message)
+  process.exit(1)
+})
