@@ -121,15 +121,24 @@ echo ""
 echo -e "${BOLD}🔨 Building packages...${NC}"
 npm run build 2>&1 | tail -1
 
-# ─── Auto-run interactive onboarding ───────────────
+# ─── Selesai — print instruksi ─────────────────────
+# Note: Tidak auto-run init karena stdin terkoneksi ke pipe curl,
+# bukan terminal. User harus jalanin init manual.
 
 echo ""
 echo -e "${GREEN}${BOLD}✅ ClaudiaClaw berhasil diinstall!${NC}"
 echo ""
 echo -e "${BOLD}📁 Lokasi:${NC} $INSTALL_DIR"
 echo ""
-echo -e "${BOLD}Sekarang kita akan setup agent pertamamu...${NC}"
+echo -e "${BOLD}🚀 Langkah selanjutnya:${NC}"
 echo ""
-
-cd "$INSTALL_DIR"
-node ./packages/cli/dist/index.js init
+echo "  1. cd $INSTALL_DIR"
+echo "  2. node ./packages/cli/dist/index.js init"
+echo "     (Masukkan API key DeepSeek & Token Telegram)" 
+echo "  3. npm start"
+echo "     (Agent langsung jalan!)"
+echo ""
+echo -e "${BOLD}📖 Bantuan:${NC}"
+echo "  node $INSTALL_DIR/packages/cli/dist/index.js --help"
+echo "  https://github.com/mhanafi09051998/ClaudiaClaw"
+echo ""
