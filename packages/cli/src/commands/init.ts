@@ -84,19 +84,24 @@ TELEGRAM_BOT_TOKEN=${botToken}
 
     // ── Auto PM2 Setup ──//
     console.log("🔧 Setup PM2 auto-restart...")
+
+    const isWin = process.platform === "win32"
+
     try {
       execSync("npm install -g pm2", { stdio: "ignore", timeout: 30000 })
       execSync("pm2 start ecosystem.config.js", { cwd, stdio: "ignore", timeout: 10000 })
       execSync("pm2 save", { stdio: "ignore", timeout: 10000 })
       console.log("  ✅ PM2 started — agent jalan dengan auto-restart")
 
-      try {
-        const startupCmd = execSync("pm2 startup", { cwd, encoding: "utf-8", timeout: 10000 })
-        for (const line of startupCmd.split("\n")) {
-          if (line.includes("sudo")) console.log(`  ⚡ Jalankan: ${line.trim()}`)
-        }
-        console.log("  ✅ Startup configured")
-      } catch {}
+      if (!isWin) {
+        try {
+          const startupCmd = execSync("pm2 startup", { cwd, encoding: "utf-8", timeout: 10000, stdio: ["ignore", "pipe", "ignore"] })
+          for (const line of startupCmd.split("\n")) {
+            if (line.includes("sudo")) console.log(`  ⚡ Jalankan: ${line.trim()}`)
+          }
+          console.log("  ✅ Startup configured")
+        } catch {}
+      }
     } catch (err) {
       console.log(`  ⚠️  PM2 setup skipped: ${(err as Error).message}`)
       console.log("  Jalankan manual: npm start")
