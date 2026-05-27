@@ -6,7 +6,9 @@ import { stdin as input, stdout as output } from "process"
 
 // ─── Single readline instance ───────────────────────
 
-const rl = createInterface({ input, output, terminal: input.isTTY })
+// Inisialisasi stdin dan paksa terminal mode untuk kompatibilitas Windows/Git Bash
+input.resume()
+const rl = createInterface({ input, output, terminal: true })
 
 async function ask(question: string, defaultVal?: string): Promise<string> {
   const answer = await rl.question(
