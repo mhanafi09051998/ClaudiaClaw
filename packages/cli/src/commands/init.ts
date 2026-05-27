@@ -55,9 +55,9 @@ export async function init() {
     writeFileSync(
       join(cwd, ".env"),
       `# ClaudiaClaw Configuration
-DEEPSEEK_API_KEY=***
+DEEPSEEK_API_KEY=${apiKey}
 DEEPSEEK_MODEL=${model}
-TELEGRAM_BOT_TOKEN=***
+TELEGRAM_BOT_TOKEN=${botToken}
 `
     )
 
