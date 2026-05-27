@@ -3,19 +3,20 @@
   "version": "0.1.0",
   "private": false,
   "license": "MIT",
-  "description": "Super modern, efficient & effective agent framework — built from scratch with DeepSeek",
+  "description": "Super modern, efficient & effective agent framework \u2014 built from scratch with DeepSeek",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
     "build": "npm run build --workspaces",
-    "clean": "npm run clean --workspaces",
+    "clean": "rm -rf packages/*/dist node_modules/.cache",
     "dev": "npm run dev --workspaces --if-present",
     "start": "node ./packages/cli/dist/index.js start",
     "init": "node ./packages/cli/dist/index.js init",
     "test": "npm run test --workspaces --if-present",
     "lint": "eslint packages/*/src --ext .ts",
-    "format": "prettier --write 'packages/*/src/**/*.ts'"
+    "format": "prettier --write 'packages/*/src/**/*.ts'",
+    "fresh": "rm -rf packages/*/dist .env config.json data node_modules && npm install && npm run build"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

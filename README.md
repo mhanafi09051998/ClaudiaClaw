@@ -41,8 +41,9 @@ Built **from scratch in 2026** with modern JavaScript, zero legacy patterns, and
 
 ## 🚀 Install
 
-**Clone & Setup:**
+**Fresh install (hapus dulu jika ada):**
 ```bash
+rm -rf ~/.claudiaclaw
 git clone https://github.com/mhanafi09051998/ClaudiaClaw.git ~/.claudiaclaw
 cd ~/.claudiaclaw
 npm install && npm run build
