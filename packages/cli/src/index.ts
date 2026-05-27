@@ -22,6 +22,12 @@ async function main() {
       await start()
       break
     }
+    case "fresh":
+    case "reset": {
+      const { fresh } = await import("./commands/fresh.js")
+      await fresh()
+      break
+    }
     case "version":
     case "--version":
     case "-v":
@@ -51,12 +57,15 @@ async function main() {
   COMMANDS
     init      🚀  Onboarding wizard — setup your first agent
     start     ▶   Start an agent from config
+    fresh     🧹  Clean install from scratch
+    pairing   🔑  Approve user pairing
     version   ℹ️   Show version
     help      ℹ️   Show this help
 
   EXAMPLES
     claudiaclaw init      Interactive setup
     claudiaclaw start     Run your agent
+    claudiaclaw fresh     Reset everything
 `)
       break
   }
