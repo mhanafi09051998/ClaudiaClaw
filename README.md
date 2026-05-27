@@ -41,12 +41,24 @@ Built **from scratch in 2026** with modern JavaScript, zero legacy patterns, and
 
 ## 🚀 Install
 
-**Satu baris — Linux / Windows (Git Bash):**
+**Clone & Setup:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mhanafi09051998/ClaudiaClaw/main/install.sh | sh
+git clone https://github.com/mhanafi09051998/ClaudiaClaw.git ~/.claudiaclaw
+cd ~/.claudiaclaw
+npm install && npm run build
 ```
 
-Yang terjadi setelah itu:
+**Wizard interaktif:**
+```bash
+node ./packages/cli/dist/index.js init
+```
+
+**Jalankan agent:**
+```bash
+npm start
+```
+
+Yang terjadi saat init:
 ```
 1. Install Git & Node.js (otomatis jika perlu)
 2. Clone ClaudiaClaw ke ~/.claudiaclaw/
@@ -75,13 +87,7 @@ pm2 status
 pm2 logs claudiaclaw
 ```
 
-**Windows:** pastikan sudah install [Git for Windows](https://git-scm.com/download/win) dan [Node.js v22+](https://nodejs.org).
-Jalankan dari **Git Bash** (bukan CMD/PowerShell).
 
-**Custom path:**
-```bash
-curl -fsSL https://raw.githubusercontent.com/.../install.sh | sh -s -- /opt/claudiaclaw
-```
 
 ---
 
