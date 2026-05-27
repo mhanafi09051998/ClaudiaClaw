@@ -117,6 +117,14 @@ export async function start() {
 
   if (existsSync(configPath)) config.loadFile(configPath)
 
+  // Debug: cek .env
+  if (existsSync(envPath)) {
+    const preview = readFileSync(envPath, "utf-8").slice(0, 200)
+    console.log("[Debug] .env file:", preview.replace(/\n/g, " | "))
+  } else {
+    console.log("[Debug] .env file NOT FOUND at:", envPath)
+  }
+
   const apiKey = config.get<string>("deepseek.apiKey")
   if (!apiKey) { console.error("❌ DEEPSEEK_API_KEY not set"); process.exit(1) }
 
