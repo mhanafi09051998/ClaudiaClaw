@@ -26,7 +26,8 @@
     "@claudiaclaw/tools": "*",
     "@claudiaclaw/memory": "*",
     "@claudiaclaw/config": "*",
-    "@claudiaclaw/skill": "*"
+    "@claudiaclaw/skill": "*",
+    "enquirer": "^2.4.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

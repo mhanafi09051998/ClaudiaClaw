@@ -6,5 +6,5 @@ export default defineConfig({
   dts: true,
   clean: true,
   platform: "node",
-  external: ["readline/promises", "child_process"],
+  external: ["enquirer"],
 })
